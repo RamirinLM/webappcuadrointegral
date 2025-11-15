@@ -6,7 +6,7 @@ Crete virtual environment
     python -m venv env
 activar ambiente virtual
     ctrl+shift+p select interpreter Seleccionar el ambiente anterior 
-    abrir nueva terminal, deve aparecer el prompt con (env)
+    abrir nueva terminal, debe aparecer el prompt con (env)
 instalar django
     pip install django
 upgrade pip
