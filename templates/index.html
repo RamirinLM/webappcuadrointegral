@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SISTEMA GESTIÓN DE PROYECTOS</title>
+</head>
+<body>
+    <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
+    <h2> Proyectos </h2>
+    <ul>
+        {% for proyecto in proyecto_list %}
+            <li>
+                <strong>{{ proyecto.nombre }}</strong> - {{ proyecto.descripcion }} (Estado: {{ proyecto.estado }})                
+            </li>
+            <li>
+                <a href="/admin">Administrar</a>
+            </li>
+        {% endfor %}
+</body>
+</html>

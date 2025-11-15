@@ -17,7 +17,7 @@ class Proyecto(models.Model):
     estado = models.IntegerField(choices=ESTADO, default=0)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     fecha_modificacion = models.DateTimeField(auto_now=True)
-
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
 
     def __str__(self):
         return self.nombre
@@ -29,6 +29,7 @@ class ActaConstitucion(models.Model):
     justificacion = models.TextField()
     proyecto = models.ForeignKey(to=Proyecto, on_delete=models.CASCADE)
     usuario = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
 
     def __str__(self):
         return self.nombre
@@ -37,6 +38,7 @@ class Persona(models.Model):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
     email = models.EmailField()
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
 
     class Meta:
         abstract = True
@@ -52,7 +54,7 @@ class Comunicacion(models.Model):
     fecha = models.DateField()
     interesado = models.ForeignKey(to=Interesado, on_delete=models.CASCADE)
     proyecto = models.ForeignKey(to=Proyecto, on_delete=models.CASCADE)
-    
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
 
     def __str__(self):
         return f"Comunicación con {self.interesado.nombre} para el proyecto {self.proyecto.nombre}"
@@ -63,6 +65,7 @@ class Riesgo(models.Model):
     impacto = models.FloatField()
     estrategia_mitigacion = models.TextField()
     proyecto = models.ForeignKey(to=Proyecto, on_delete=models.CASCADE)
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
 
     def __str__(self):
         return f"Riesgo para el proyecto {self.proyecto.nombre}"
@@ -72,6 +75,7 @@ class Alcance(models.Model):
     metas = models.TextField()
     tiempo = models.IntegerField()
     proyecto = models.ForeignKey(to=Proyecto, on_delete=models.CASCADE)
+    slug = models.SlugField(unique=True, max_length=200, blank=True)
 
     def __str__(self):
         return f"Alcance del proyecto {self.proyecto.nombre}"
