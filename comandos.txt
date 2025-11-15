@@ -11,3 +11,9 @@ instalar django
     pip install django
 upgrade pip
     python -m pip install --upgrade pip
+ejecutar el servidor de prueba
+    python manage.py runserver
+acceder a la ip de prueba y seleccionar administrar 
+credenciales de super usuario
+    user: ramiro
+    password: Cuenca2025
