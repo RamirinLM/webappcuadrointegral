@@ -1,0 +1,13 @@
+Ejecutar Visual studio code como administrador
+Ubicado en la carpeta del proyecto ejecutar en una terminal de visual studio code
+Check python version
+    python
+Crete virtual environment 
+    python -m venv env
+activar ambiente virtual
+    ctrl+shift+p select interpreter Seleccionar el ambiente anterior 
+    abrir nueva terminal, deve aparecer el prompt con (env)
+instalar django
+    pip install django
+upgrade pip
+    python -m pip install --upgrade pip
