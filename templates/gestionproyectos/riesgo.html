@@ -1,0 +1,22 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block content %}
+<div class="container">
+<div class="title mt-3">
+<div class="card-title">
+    <h2> Riesgo {{ riesgo.descripcion }}</h2>
+</div>
+<div class="card-body">
+    <div class="card-text">
+        <p>Probabilidad: {{ riesgo.probabilidad }}</p>
+        <p>Asociado al proyecto: {{ riesgo.proyecto.nombre }}</p>
+        <p>Impacto: {{ riesgo.impacto }}</p>
+        <p>Estrategia: {{ riesgo.estrategia_mitigacion }}</p>
+    </div>
+</div>
+</div>
+</div>
+    <h1>
+       
+       
+    </h1>
+{% endblock content %}

@@ -1,0 +1,214 @@
+
+{% extends 'lineabase/base.html' %}
+{% block content %}
+    <h2>
+        Gantt Chart for: {{ cronograma.proyecto.nombre }}
+    </h2>
+    <div class="gantt" id="gantt">
+        <div class="gantt-header">
+            <div class="gantt-left">Task</div>
+            <div style="flex:1">Timeline</div>
+        </div>
+
+        <div class="gantt-canvas">
+            <div class="labels" id="labels"></div>
+            <div class="gantt-track" id="track">
+                <!-- SVG will be injected here -->
+            </div>
+        </div>
+        <div class="tooltip" id="tooltip"></div>
+    </div>
+
+    <script>
+        // Replace or inject tasks from server as JSON. Example structure:
+       const actividades = '{{ actividades_json|escapejs }}';
+        // [{ id:1, name:"Design", start:"2025-01-02", end:"2025-01-10", progress: 60, color:"#2563eb" }, ...]
+        //const tasksFromServer = null; // e.g. {{ tasks_json|safe }}
+        //actividades = JSON.parse(actividades);
+        const tasksFromServer = actividades ? JSON.parse(actividades).map(a => ({
+            id: a.id,
+            name: a.descripcion,
+            start: a.fechaInicio,
+            end: a.fechaFin,
+            progress: a.porcentajeCompletado,
+            color: a.esHito ? "#10b981" : "#3b82f6" // green for milestones, blue otherwise
+        })) : null;
+
+        const defaultTasks = [
+            { id:1, name:"Project kickoff", start:"2025-01-02", end:"2025-01-04", progress:100, color:"#10b981" },
+            { id:2, name:"Design phase", start:"2025-01-05", end:"2025-01-15", progress:70, color:"#3b82f6" },
+            { id:3, name:"Implementation", start:"2025-01-12", end:"2025-02-02", progress:40, color:"#f59e0b" },
+            { id:4, name:"QA & Testing", start:"2025-01-25", end:"2025-02-10", progress:10, color:"#ef4444" },
+            { id:5, name:"Deployment", start:"2025-02-11", end:"2025-02-14", progress:0, color:"#6366f1" }
+        ];
+        const tasks = tasksFromServer || defaultTasks;
+
+        // Utility
+        function parseDate(d) { return new Date(d + "T00:00:00"); }
+        function daysBetween(a,b) { return Math.round((b - a) / (1000*60*60*24)); }
+        function formatDate(d) {
+            const dt = new Date(d);
+            return dt.toISOString().slice(0,10);
+        }
+
+        // Prepare timeline bounds
+        let minDate = null, maxDate = null;
+        tasks.forEach(t => {
+            const s = parseDate(t.start);
+            const e = parseDate(t.end);
+            if (!minDate || s < minDate) minDate = s;
+            if (!maxDate || e > maxDate) maxDate = e;
+        });
+        // Add padding
+        minDate = new Date(minDate); minDate.setDate(minDate.getDate() - 2);
+        maxDate = new Date(maxDate); maxDate.setDate(maxDate.getDate() + 2);
+
+        const totalDays = daysBetween(minDate, maxDate) || 1;
+        const container = document.getElementById('track');
+        const labelsEl = document.getElementById('labels');
+        const tooltip = document.getElementById('tooltip');
+
+        function render() {
+            // compute width based on container width
+            const trackWidth = Math.max(container.clientWidth - 24, 600); // fallback for small screens
+            const labelWidth = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--label-width')) || 200;
+            const svgWidth = trackWidth;
+            const rowHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--row-height')) || 36;
+            document.documentElement.style.setProperty('--rows', tasks.length);
+
+            // scale: px per day
+            const pxPerDay = svgWidth / totalDays;
+
+            // build labels column
+            labelsEl.innerHTML = '';
+            tasks.forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'task-row';
+                const name = document.createElement('div');
+                name.className = 'task-name';
+                name.textContent = t.name;
+                div.appendChild(name);
+                labelsEl.appendChild(div);
+            });
+
+            // build SVG
+            const svgHeight = rowHeight * tasks.length + 40;
+            const xmlns = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(xmlns, 'svg');
+            svg.setAttribute('width', svgWidth);
+            svg.setAttribute('height', svgHeight);
+            svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+
+            // grid: vertical lines per week (7 days)
+            const weekDays = [];
+            const start = new Date(minDate);
+            for (let d = 0; d <= totalDays; d++) {
+                const x = Math.round(d * pxPerDay);
+                const isWeekStart = (start.getDay() === 1); // Monday
+                // draw lighter vertical grid
+                const line = document.createElementNS(xmlns, 'line');
+                line.setAttribute('x1', x);
+                line.setAttribute('y1', 0);
+                line.setAttribute('x2', x);
+                line.setAttribute('y2', svgHeight);
+                line.setAttribute('class', 'grid-line');
+                line.setAttribute('opacity', (d % 7 === 0) ? '0.7' : '0.35');
+                svg.appendChild(line);
+
+                // axis label every 7 days
+                if (d % 7 === 0) {
+                    const lbl = document.createElementNS(xmlns, 'text');
+                    lbl.setAttribute('x', x + 0.5);
+                    lbl.setAttribute('y', 12);
+                    lbl.setAttribute('class', 'axis-label');
+                    lbl.textContent = formatDate(new Date(minDate.getTime() + d*24*3600*1000));
+                    svg.appendChild(lbl);
+                }
+                start.setDate(start.getDate() + 1);
+            }
+
+            // current date line
+            const today = new Date();
+            if (today >= minDate && today <= maxDate) {
+                const xToday = daysBetween(minDate, today) * pxPerDay;
+                const curLine = document.createElementNS(xmlns, 'line');
+                curLine.setAttribute('x1', xToday);
+                curLine.setAttribute('y1', 0);
+                curLine.setAttribute('x2', xToday);
+                curLine.setAttribute('y2', svgHeight);
+                curLine.setAttribute('class', 'current-line');
+                svg.appendChild(curLine);
+            }
+
+            // draw tasks
+            tasks.forEach((t,i) => {
+                const y = 24 + i * rowHeight;
+                const s = parseDate(t.start);
+                const e = parseDate(t.end);
+                const x = daysBetween(minDate, s) * pxPerDay;
+                const w = Math.max(2, (daysBetween(s, e)+1) * pxPerDay);
+
+                // group
+                const g = document.createElementNS(xmlns, 'g');
+                g.setAttribute('transform', `translate(${x}, ${y})`);
+                g.style.cursor = 'pointer';
+
+                // bar background
+                const rect = document.createElementNS(xmlns, 'rect');
+                rect.setAttribute('x', 0);
+                rect.setAttribute('y', -12);
+                rect.setAttribute('width', w);
+                rect.setAttribute('height', 20);
+                rect.setAttribute('rx', 4);
+                rect.setAttribute('class', 'bar');
+                rect.setAttribute('fill', t.color || '#60a5fa');
+                g.appendChild(rect);
+
+                // progress overlay
+                const progressW = Math.max(0, Math.round(w * Math.max(0, Math.min(100, t.progress || 0)) / 100));
+                if (progressW > 0) {
+                    const prog = document.createElementNS(xmlns, 'rect');
+                    prog.setAttribute('x', 0);
+                    prog.setAttribute('y', -12);
+                    prog.setAttribute('width', progressW);
+                    prog.setAttribute('height', 20);
+                    prog.setAttribute('rx', 4);
+                    prog.setAttribute('class', 'progress');
+                    prog.setAttribute('fill', 'rgba(255,255,255,0.25)');
+                    g.appendChild(prog);
+                }
+
+                // label inside bar if space
+                if (w > 60) {
+                    const txt = document.createElementNS(xmlns, 'text');
+                    txt.setAttribute('x', 8);
+                    txt.setAttribute('y', 2);
+                    txt.setAttribute('fill', 'white');
+                    txt.setAttribute('font-size', '12');
+                    txt.textContent = `${t.name} (${t.progress || 0}%)`;
+                    g.appendChild(txt);
+                }
+
+                // hover tooltip logic
+                g.addEventListener('mousemove', (ev) => {
+                    tooltip.style.display = 'block';
+                    const rect = container.getBoundingClientRect();
+                    tooltip.style.left = (ev.clientX - rect.left) + 'px';
+                    tooltip.style.top = (ev.clientY - rect.top) + 'px';
+                    tooltip.innerHTML = `<strong>${t.name}</strong><br>${formatDate(t.start)} → ${formatDate(t.end)}<br>Progress: ${t.progress||0}%`;
+                });
+                g.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+
+                svg.appendChild(g);
+            });
+
+            // clear and append
+            container.innerHTML = '';
+            container.appendChild(svg);
+        }
+
+        // initial render and on resize
+        render();
+        window.addEventListener('resize', () => { requestAnimationFrame(render); });
+    </script>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block content %}
+    <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
+    <h2> Riesgos </h2>
+    <div class="container">
+         <ul>
+        {% for riesgo in riesgo_list %}
+        <div class="card m-3">
+            <div class="card-title">
+                <h2>{{ riesgo.descripcion | title}}</h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    probabilidad: {{ riesgo.probabilidad }}
+                </p>
+                <a class="btn btn-primary" href="{% url 'riesgo_view' riesgo.slug %}">Ver más...</a>           
+            </div>
+           
+        </div>
+           
+        {% endfor %}
+        </ul>
+    </div>
+{% endblock content %}
+   

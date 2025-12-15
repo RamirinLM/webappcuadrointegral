@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <title>GESTIÓN DE PROYECTOS</title>
+    <style>
+        :root {
+            --label-width: 200px;
+            --row-height: 36px;
+            --gap: 6px;
+            --axis-height: 40px;
+            --bar-radius: 4px;
+            --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+        body {
+            margin: 20px;
+            font-family: var(--font-family);
+            color: #111827;
+            background: #f8fafc;
+        }
+        .gantt {
+            background: white;
+            border: 1px solid #e6edf3;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(16,24,40,0.03);
+            max-width: 100%;
+        }
+        .gantt-header {
+            display: flex;
+            align-items: center;
+            height: var(--axis-height);
+            border-bottom: 1px solid #eef2f6;
+            padding: 8px;
+            gap: 8px;
+            font-weight: 600;
+            background: linear-gradient(180deg,#ffffff, #fbfdff);
+        }
+        .gantt-left {
+            width: var(--label-width);
+            padding-left: 12px;
+            box-sizing: border-box;
+            flex: 0 0 var(--label-width);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gantt-canvas {
+            position: relative;
+            display: grid;
+            grid-template-columns: var(--label-width) 1fr;
+        }
+        .gantt-rows {
+            padding: 12px;
+        }
+        .gantt-track {
+            position: relative;
+            padding: 12px 12px 24px;
+            overflow-x: auto;
+            background: linear-gradient(180deg,#fff,#fbfdff);
+        }
+        .labels {
+            padding: 12px;
+            box-sizing: border-box;
+        }
+        .task-row {
+            display: flex;
+            align-items: center;
+            height: var(--row-height);
+            gap: 10px;
+            padding-right: 10px;
+        }
+        .task-name {
+            font-size: 13px;
+            color: #0f172a;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        svg {
+            display: block;
+            width: 100%;
+            height: calc(var(--row-height) * var(--rows) + 40px);
+            overflow: visible;
+        }
+        .bar {
+            stroke: none;
+            cursor: pointer;
+            transition: filter .12s ease;
+        }
+        .bar:hover {
+            filter: brightness(.95);
+        }
+        .progress {
+            fill: rgba(255,255,255,0.3);
+        }
+        .grid-line {
+            stroke: #eef2f6;
+            stroke-width: 1;
+        }
+        .axis-label {
+            font-size: 12px;
+            fill: #475569;
+            text-anchor: middle;
+        }
+        .current-line {
+            stroke: #ef4444;
+            stroke-width: 2;
+            stroke-dasharray: 4 4;
+        }
+        .tooltip {
+            position: absolute;
+            pointer-events: none;
+            background: #0b1220;
+            color: #fff;
+            font-size: 12px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            white-space: nowrap;
+            transform: translate(-50%, -120%);
+            z-index: 20;
+            display: none;
+        }
+        @media (max-width: 640px) {
+            :root { --label-width: 140px; --row-height: 40px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow mb-3" id="mainNav">
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item"><a class="navbar-brand p-3" href="{% url 'home' %}">Inicio</a></li>
+                <li><a class="navbar-brand p-3" href="/lineabase/index">Cronogramas</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    {% block content %}
+    {% endblock content %}
+    <footer class="footer mt-auto py-3 bg-light shadow mt-3">
+        <div class="text-center p-3 bg-light mt-3">
+            © 2024 SISTEMA GESTIÓN DE PROYECTOS
+        </div>
+        
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

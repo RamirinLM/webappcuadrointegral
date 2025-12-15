@@ -1,0 +1,25 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block content %}
+    <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
+    <h2> Alcance </h2>
+    <div class="container">
+         <ul>
+        {% for alcance in alcance_list %}
+        <div class="card m-3">
+            <div class="card-title">
+                <h2>{{ alcance.descripcion | title}}</h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    Metas: {{ alcance.metas }}
+                </p>
+                <a class="btn btn-primary" href="{% url 'alcance_view' alcance.slug %}">Ver más...</a>           
+            </div>
+           
+        </div>
+           
+        {% endfor %}
+        </ul>
+    </div>
+{% endblock content %}
+   

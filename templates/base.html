@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <title>SISTEMA GESTIÓN DE PROYECTOS</title>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light shadow mb-3" id="mainNav">
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item"><a class="navbar-brand p-3" href="{% url 'home' %}">Inicio</a></li>
+                <li><a class="navbar-brand p-3" href="/admin" target="_blank">Administrar</a></li>
+                <li><a class="navbar-brand p-3" href="/gestionproyectos/index">Gestion de Proyectos</a></li>
+                <li><a class="navbar-brand p-3" href="/lineabase/index">Linea Base</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    {% block content %}
+    {% endblock content %}
+    <footer class="footer mt-auto py-3 bg-light shadow mt-3">
+        <div class="text-center p-3 bg-light mt-3">
+            © 2024 SISTEMA GESTIÓN DE PROYECTOS
+        </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block content %}
+    <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
+    <h2> Comunicaciones </h2>
+    <div class="container">
+         <ul>
+        {% for comunicacion in comunicacion_list %}
+        <div class="card m-3">
+            <div class="card-title">
+                <h2>{{ comunicacion.observaciones | title}}</h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    Fecha {{ comunicacion.fecha }}
+                </p>
+                <a class="btn btn-primary" href="{% url 'comunicacion_view' comunicacion.slug %}">Ver más...</a>           
+            </div>
+           
+        </div>
+           
+        {% endfor %}
+        </ul>
+    </div>
+{% endblock content %}
+   

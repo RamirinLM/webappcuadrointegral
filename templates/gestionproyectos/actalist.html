@@ -1,0 +1,25 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block content %}
+    <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
+    <h2> Actas </h2>
+    <div class="container">
+         <ul>
+        {% for acta in acta_list %}
+        <div class="card m-3">
+            <div class="card-title">
+                <h2>{{ acta.proyecto | title}}</h2>
+            </div>
+            <div class="card-body">
+                <p>
+                    objetivos de la acta: {{ acta.objetivos }}
+                </p>
+                <a class="btn btn-primary" href="{% url 'acta_view' acta.slug %}">Ver más...</a>           
+            </div>
+           
+        </div>
+           
+        {% endfor %}
+        </ul>
+    </div>
+{% endblock content %}
+   

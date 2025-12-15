@@ -1,0 +1,17 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block content %}
+<div class="container">
+<div class="title mt-3">
+<div class="card-title">
+    <h2>Alcance {{ alcance.descripcion }}</h2>
+</div>
+<div class="card-body">
+    <div class="card-text">
+        <p>Metas: {{ alcance.metas }}</p>
+        <p>Asociado al proyecto: {{ alcance.proyecto.nombre }}</p>
+        <p>Tiempo: {{ alcance.tiempo }}</p>
+    </div>
+</div>
+</div>
+</div>
+{% endblock content %}
