@@ -4,7 +4,7 @@
 <div class="title mt-3">
 <div class="card-title">
     <h2>Cronograma de:  {{ cronograma.proyecto.nombre }}</h2>
-    <a class="btn btn-primary" href="{% url 'gantt_chart' cronograma.slug %}">Ver diagrama de GANTT</a>   
+    <a class="btn btn-primary" href="{% url 'gantt_chart' cronograma.slug %}" target="_blank">Ver diagrama de GANTT</a>   
     <a class="btn btn-success" href="{% url 'bar_chart' cronograma.slug %}" target="_blank">Diagrama de barras</a>       
 </div>
 <div class="card-body">

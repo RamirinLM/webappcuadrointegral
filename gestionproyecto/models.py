@@ -22,7 +22,7 @@ class Interesado(Persona):
     rol = models.CharField(max_length=100)
 
     def __str__(self):
-        return self.nombre
+        return self.nombre + " " + self.apellido
 
 class Comunicacion(models.Model):
     observaciones = models.TextField()
