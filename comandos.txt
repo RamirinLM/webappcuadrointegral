@@ -16,4 +16,4 @@ ejecutar el servidor de prueba
 acceder a la ip de prueba y seleccionar administrar 
 credenciales de super usuario
     user: ramiro
-    password: Cuenca2025
+    password: Tesis2026
