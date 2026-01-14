@@ -1,0 +1,23 @@
+
+{% extends 'seguimiento/base.html' %}
+{% block content %}
+    <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
+    <h2> Seguimiento </h2>
+    <div class="container">
+         <ul>
+        {% for seguimiento in seguimiento_list %}
+        <div class="card m-3">
+            <div class="card-title">
+                <h2>{{ seguimiento.proyecto.nombre | title}}</h2>
+            </div>
+            <div class="card-body">
+                <a class="btn btn-primary" href="{% url 'seguimiento_view' seguimiento.slug %}">Ver más...</a>           
+            </div>
+           
+        </div>
+           
+        {% endfor %}
+        </ul>
+    </div>
+{% endblock content %}
+   

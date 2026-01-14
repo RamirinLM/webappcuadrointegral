@@ -1,0 +1,126 @@
+{% extends 'seguimiento/base.html' %}
+{% block content %}
+<div class="container">
+<div class="title mt-3">
+<div class="card-title">
+    <h2>Seguimiento de:  {{ seguimiento.proyecto.nombre }}</h2>       
+</div>
+<div class="card-body">
+    <table class="table table-striped" >
+        <tr>
+            <th>Fecha:</th>
+            <td>{{ seguimiento.fecha }}</td>
+        </tr>
+        <tr>
+            <th>Observacion</th>
+            <td>{{ seguimiento.observacion }}</td>
+        </tr>
+    </table>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="title mt-3">
+<div class="card-title">
+    <h2>Lista de CostPerformanceIndexCPI</h2>
+</div>
+<div class="card-body">
+    <table class="table table-striped" >
+        <tr class="table-primary">
+            <th>Fecha</th>
+            <th>Observaciones</th>
+            <th>Estado</th>           
+            <th>Costo Real</th>
+            <th>Costo Planificado</th>
+            <th>Valor CPI</th>
+        </tr>
+         {% for cpi in seguimiento.CostPerformanceIndexCPIs %}
+        <tr>
+            <td>{{ cpi.fecha }}</td>
+            <td>{{ cpi.observaciones }}</td>
+            <td>{{ cpi.estado }}</td>
+            <td>{{ cpi.costoReal }}</td>
+            <td>{{ cpi.costoPlanificado }}</td>
+            <td>{{ cpi.valorCPI }}</td>            
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</div>
+</div>
+<div class="container">
+<div class="title mt-3">
+<div class="card-title">
+    <h2>Lista de EarnedValueEVs</h2>
+</div>
+<div class="card-body">
+    <table class="table table-striped" >
+        <tr class="table-primary">
+            <th>Fecha</th>
+            <th>Observaciones</th>
+            <th>Valor EV</th>
+        </tr>
+         {% for ev in seguimiento.EarnedValueEVs %}
+        <tr>
+            <td>{{ ev.fecha }}</td>
+            <td>{{ ev.observaciones }}</td>
+            <td>{{ ev.valor }}</td>          
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</div>
+</div>
+
+<div class="container">
+<div class="title mt-3">
+<div class="card-title">
+    <h2>Lista de PlannedValuePV</h2>
+</div>
+<div class="card-body">
+    <table class="table table-striped" >
+        <tr class="table-primary">
+            <th>Fecha</th>
+            <th>Observaciones</th>
+            <th>Valor PV</th>
+        </tr>
+         {% for pv in seguimiento.PlannedValuePVs %}
+        <tr>
+            <td>{{ pv.fecha }}</td>
+            <td>{{ pv.observaciones }}</td>
+            <td>{{ pv.valor }}</td>          
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</div>
+</div>
+
+<div class="container">
+<div class="title mt-3">
+<div class="card-title">
+    <h2>Lista de ShedulePerformanceIndexSPI</h2>
+</div>
+<div class="card-body">
+    <table class="table table-striped" >
+        <tr class="table-primary">
+            <th>Fecha</th>
+            <th>Observaciones</th>
+            <th>Estado</th>
+            <th>Valor SPI</th>
+        </tr>
+         {% for spi in seguimiento.ShedulePerformanceIndexSPIs %}
+        <tr>
+            <td>{{ spi.fecha }}</td>
+            <td>{{ spi.observaciones }}</td>
+            <td>{{ spi.estado }}</td>
+            <td>{{ spi.valor }}</td>          
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</div>
+</div>
+
+
+{% endblock content %}
