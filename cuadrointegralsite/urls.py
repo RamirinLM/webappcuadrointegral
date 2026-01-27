@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 
 from cuadrointegralsite import views
 
@@ -25,4 +26,5 @@ urlpatterns = [
     path('lineabase/', include('lineabase.urls'), name='lineabase'),
     path('seguimiento/', include('seguimiento.urls'), name='seguimiento'),
     path('', views.HomeView.as_view(), name='home'),
+    path('dashboard/', include('dashboard.urls')),
 ]

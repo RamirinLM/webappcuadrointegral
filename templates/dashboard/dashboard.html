@@ -1,0 +1,245 @@
+{% extends 'dashboard/base.html' %}
+{% load dashboard_filters %}
+
+{% block title %}Dashboard Principal{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-speedometer2 me-2"></i>Dashboard Principal
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <small class="text-muted">Actualizado: {% now "d/m/Y H:i" %}</small>
+    </div>
+</div>
+
+<!-- Fila 1: Métricas Principales -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card border-left-primary">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Proyectos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ total_proyectos }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clipboard-data fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card metric-card border-left-success">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Proyectos Activos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ proyectos_activos }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-play-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card metric-card border-left-info">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Costo Estimado
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            {{ costo_total_estimado|currency }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card metric-card border-left-warning">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Diferencia Costos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800 {% if diferencia_costo >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ diferencia_costo|currency }}
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-graph-up-arrow fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fila 2: Gráficos y Tablas -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-calendar-week me-2"></i>Actividades Recientes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Progreso</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for actividad in actividades_recientes %}
+                            <tr>
+                                <td>{{ actividad.descripcion|truncatechars:50 }}</td>
+                                <td>{{ actividad.estado|estado_badge }}</td>
+                                <td>
+                                    <div class="progress" style="height: 10px;">
+                                        <div class="progress-bar bg-{{ actividad.porcentajeCompletado|progress_color }}" 
+                                           role="progressbar" 
+                                            data-width="{{ actividad.porcentajeCompletado }}"
+                                            aria-valuenow="{{ actividad.porcentajeCompletado }}" 
+                                            aria-valuemin="0" 
+                                            aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">{{ actividad.porcentajeCompletado }}%</small>
+                                </td>
+                                <td>{{ actividad.fechaInicio|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay actividades recientes</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-pie-chart me-2"></i>Distribución por Estado
+                </h6>
+            </div>
+            <div class="card-body">
+                {% for estado, cantidad in proyectos_por_estado.items %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>{{ estado }}</span>
+                        <span class="font-weight-bold">{{ cantidad }}</span>
+                    </div>
+                    <div class="progress" style="height: 10px;">
+                        <div class="progress-bar 
+                            {% if estado == 'Iniciado' %}bg-primary
+                            {% elif estado == 'En Progreso' %}bg-warning
+                            {% elif estado == 'Completado' %}bg-success
+                            {% else %}bg-danger{% endif %}" 
+                           role="progressbar" 
+                            data-width="{{ actividad.porcentajeCompletado }}"
+                            aria-valuenow="{{ actividad.porcentajeCompletado }}" 
+                            aria-valuemin="0" 
+                            aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fila 3: Alertas y KPIs -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-left-warning">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Proyectos con Alertas
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if proyectos_con_problemas %}
+                    {% for proyecto in proyectos_con_problemas %}
+                    <div class="alert alert-warning alert-dismissible fade show mb-2" role="alert">
+                        <strong>{{ proyecto.proyecto.nombre }}</strong>
+                        <br>
+                        <small>
+                            {% if proyecto.cpi %}<span class="badge bg-danger me-1">CPI: {{ proyecto.cpi|floatformat:2 }}</span>{% endif %}
+                            {% if proyecto.spi %}<span class="badge bg-danger">SPI: {{ proyecto.spi|floatformat:2 }}</span>{% endif %}
+                            <br>
+                            {{ proyecto.razones }}
+                        </small>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle me-2"></i>
+                        No hay proyectos con problemas críticos.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-left-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="bi bi-clock-history me-2"></i>Próximos a Vencer (7 días)
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if proyectos_proximos_vencer %}
+                    {% for proyecto in proyectos_proximos_vencer %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 p-2 bg-light rounded">
+                        <div>
+                            <strong>{{ proyecto.nombre }}</strong><br>
+                            <small class="text-muted">Vence: {{ proyecto.fecha_fin|date:"d/m/Y" }}</small>
+                        </div>
+                        <span class="badge bg-warning">{{ proyecto.get_estado_display }}</span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        No hay proyectos próximos a vencer.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

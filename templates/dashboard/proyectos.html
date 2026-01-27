@@ -1,0 +1,230 @@
+{% extends 'dashboard/base.html' %}
+{% load dashboard_filters %}
+{% load static %}
+
+{% block title %}Dashboard - Proyectos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-clipboard-data me-2"></i>Proyectos
+        </h1>
+    </div>
+
+    <!-- Tarjetas de Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Proyectos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ proyectos|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-clipboard-data fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Interesados Totales
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_interesados }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Riesgos Identificados
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ total_riesgos }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Meses con Actividad
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ proyectos_por_mes|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-month fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Evolución por Mes -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-bar-chart-line me-2"></i>Proyectos por Mes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if proyectos_por_mes %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered" width="100%" cellspacing="0">
+                                <thead>
+                                    <tr>
+                                        <th>Mes</th>
+                                        <th>Cantidad de Proyectos</th>
+                                        <th>Porcentaje</th>
+                                        <th>Barra de Progreso</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for mes, cantidad in proyectos_por_mes.items %}
+                                    <tr>
+                                        <td>{{ mes }}</td>
+                                        <td>{{ cantidad }}</td>
+                                        <td>
+                                            {% with total=proyectos|length %}
+                                                {% widthratio cantidad total 100 %}%
+                                            {% endwith %}
+                                        </td>
+                                        <td>
+                                            <div class="progress">
+                                                <div class="progress-bar bg-primary" 
+                                                     role="progressbar" 
+                                                     aria-valuenow="{{ cantidad }}" 
+                                                     aria-valuemin="0" 
+                                                     
+                                                     aria-valuemax="{{ proyectos|length }}">
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th>Total</th>
+                                        <th>{{ proyectos|length }}</th>
+                                        <th>100%</th>
+                                        <th></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="bi bi-calendar-x display-4 text-muted"></i>
+                            <p class="text-muted mt-3">No hay datos de proyectos por mes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Proyectos -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-list-ul me-2"></i>Lista de Proyectos
+                    </h6>
+                    <span class="badge badge-primary badge-pill">{{ proyectos|length }}</span>
+                </div>
+                <div class="card-body">
+                    {% if proyectos %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Fecha Creación</th>
+                                        <th>Slug</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for proyecto in proyectos %}
+                                    <tr>
+                                        <td>{{ proyecto.id }}</td>
+                                        <td>{{ proyecto.nombre }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if proyecto.estado == 0 %}badge-primary
+                                                {% elif proyecto.estado == 1 %}badge-warning
+                                                {% elif proyecto.estado == 2 %}badge-success
+                                                {% else %}badge-danger{% endif %}">
+                                                {{ proyecto.get_estado_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ proyecto.fecha_inicio|date:"d/m/Y" }}</td>
+                                        <td>{{ proyecto.fecha_fin|date:"d/m/Y" }}</td>
+                                        <td>{{ proyecto.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if proyecto.slug %}
+                                                <code>{{ proyecto.slug }}</code>
+                                            {% else %}
+                                                <span class="text-muted">No asignado</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-clipboard-x display-1 text-muted"></i>
+                            <h4 class="mt-3 text-muted">No hay proyectos registrados</h4>
+                            <p class="text-muted">No se encontraron proyectos en el sistema.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
