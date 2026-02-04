@@ -7,6 +7,8 @@ class ProyectoAdmin(admin.ModelAdmin):
     filter_horizontal = ('interesados', 'comunicaciones', 'riesgos', 'alcances')
     autocomplete_fields = ['interesados', 'comunicaciones', 'riesgos', 'alcances']
 
+    search_fields = ['nombre', 'estado', 'fecha_inicio', 'fecha_fin']
+
 class InteresadoAdmin(admin.ModelAdmin):
     search_fields = ['nombre', 'apellido']
 

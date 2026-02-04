@@ -1,24 +1,13 @@
-
 import pytest
-# ============================================
-# FIXTURES DE SERVIDOR DJANGO
-# ============================================
-
-@pytest.fixture
-def live_server_url(live_server):
-    """URL del servidor en vivo"""
-    return live_server.url
-# ============================================
-# FIXTURES DE DATOS DE PRUEBA
-# ============================================
 
 @pytest.fixture
 def setup_test_data(db_access, test_user):
-    """Configurar datos de prueba para la aplicación"""
+    """Configurar datos de prueba para la aplicación lineabase"""
     from gestionproyecto.models import Proyecto, Interesado, ActaConstitucion
+    from lineabase.models import Cronograma, Presupuesto
     from datetime import date, timedelta
     
-    # Crear interesado
+     # Crear interesado
     interesado = Interesado.objects.create(
         nombre='Juan',
         apellido='Perez',
@@ -49,10 +38,21 @@ def setup_test_data(db_access, test_user):
     )
     
     proyecto.interesados.add(interesado)
+
+    # Crear cronograma
+    # IMPORTANTE: Asegúrate de que los campos coincidan exactamente con models.py
+    cronograma = Cronograma.objects.create(
+        costoEstimado=1500.00,
+        fechaInicioProyecto=date.today(),
+        fechaFinProyecto=date.today() + timedelta(days=30),
+        proyecto=proyecto,
+        slug='cronograma-e2e'
+    )
     
+    presupuesto = Presupuesto.objects.create(montoTotal=2000.00, slug='presupuesto-e2e')
+   
     return {
-        'user': test_user,
-        'interesado': interesado,
-        'acta': acta,
-        'proyecto': proyecto
+        "proyecto": proyecto,
+        "cronograma": cronograma,
+        "presupuesto": presupuesto
     }

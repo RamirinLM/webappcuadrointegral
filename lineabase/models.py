@@ -13,18 +13,11 @@ ESTADO = [
 # Create your models here.
 class Cronograma(models.Model):
     costoEstimado = models.DecimalField( decimal_places=2, max_digits=10)
-    #costoRealTotal = models.DecimalField( decimal_places=2, max_digits=10)
-    #diferenciaCostoProyecto = models.DecimalField( decimal_places=2, max_digits=10)
-    #diferenciaDiasTotal = models.IntegerField( )
     fechaFinProyecto = models.DateField()
-    #fechaFinRealProyecto = models.DateField()
     fechaInicioProyecto = models.DateField()
-    #fechaInicioRealProyecto = models.DateField()
     observaciones = models.TextField()
-    #porcentajeCompletado = models.IntegerField( default=0)
     proyecto = models.ForeignKey(to='gestionproyecto.Proyecto', on_delete=models.CASCADE)
     slug = models.SlugField(unique=True, max_length=200, blank=True)
-
     @property
     def costoRealTotal(self):
         actividades = self.actividad_set.all()

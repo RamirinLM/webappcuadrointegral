@@ -1,7 +1,7 @@
-import pytest
+
 from django.urls import reverse
 import time
-import os
+
 
 
 class TestE2ESimple:    
