@@ -1,5 +1,8 @@
 from django.contrib import admin
-from .models import Proyecto, Interesado, ActaConstitucion, Comunicacion, Riesgo, Alcance
+from .models import (
+    Proyecto, Interesado, ActaConstitucion, Comunicacion, Riesgo, Alcance,
+    Adquisicion, FeedbackInteresado, AlertaRiesgo, PerfilUsuario,
+)
 
 # Register your models here.
 class ProyectoAdmin(admin.ModelAdmin):
@@ -27,3 +30,7 @@ admin.site.register(ActaConstitucion)
 admin.site.register(Comunicacion, ComunicacionAdmin)
 admin.site.register(Riesgo, RiesgoAdmin)
 admin.site.register(Alcance, AlcanceAdmin)
+admin.site.register(Adquisicion)
+admin.site.register(FeedbackInteresado)
+admin.site.register(AlertaRiesgo)
+admin.site.register(PerfilUsuario)

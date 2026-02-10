@@ -31,9 +31,10 @@ class CostPerformanceIndexCPI(models.Model):
 
     @property
     def estado(self):
-        if self.valorCPI >= 1:
+        v = self.valorCPI
+        if v >= 1:
             return 'Bueno'
-        elif 0.9 <= self.valor < 1:
+        elif v and 0.9 <= v < 1:
             return 'Aceptable'
         else:
             return 'Malo'

@@ -1,5 +1,5 @@
 {% extends 'gestionproyectos/base.html' %}
-{% block content %}
+{% block gestion_content %}
     <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
     <h2> Proyectos </h2>
     <div class="container">
@@ -10,7 +10,7 @@
                 <h2>{{ interesado.nombre | title}}</h2>
             </div>
             <div class="card-body">
-                <a class="btn btn-primary" href="{% url 'interesado_view' interesado.slug %}">Ver más...</a>           
+                <a class="btn btn-primary" href="{% url 'gestionproyecto:interesado_detail' interesado.slug %}">Ver más...</a>           
             </div>
            
         </div>
@@ -18,5 +18,5 @@
         {% endfor %}
         </ul>
     </div>
-{% endblock content %}
+{% endblock gestion_content %}
    

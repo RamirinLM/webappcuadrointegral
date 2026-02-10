@@ -1,6 +1,7 @@
 from . import views
 from django.urls import path
 
+app_name = 'lineabase'
 
 urlpatterns = [
     path('index', views.CronogramaList.as_view(), name='index'),

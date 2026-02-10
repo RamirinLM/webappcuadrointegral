@@ -1,0 +1,12 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block gestion_content %}
+<div class="container-fluid">
+    <h1 class="page-title-gad mb-3">Riesgo</h1>
+    <form method="post" class="card card-gad p-3">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-gad-primary">Guardar</button>
+        <a href="{% url 'gestionproyecto:riesgo_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

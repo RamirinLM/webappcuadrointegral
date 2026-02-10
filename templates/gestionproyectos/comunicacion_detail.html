@@ -1,0 +1,21 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block gestion_content %}
+<div class="container-fluid">
+    <h1 class="page-title-gad mb-3">Comunicación</h1>
+    {% if user_puede_editar %}
+    <p>
+        <a href="{% url 'gestionproyecto:comunicacion_editar' comunicacion.slug %}" class="btn btn-gad-secondary">Editar</a>
+        {% if user_puede_eliminar %}
+        <a href="{% url 'gestionproyecto:comunicacion_eliminar' comunicacion.slug %}" class="btn btn-outline-danger">Eliminar</a>
+        {% endif %}
+    </p>
+    {% endif %}
+    <div class="card card-gad">
+        <div class="card-body">
+            <p><strong>Fecha:</strong> {{ comunicacion.fecha|date:"d/m/Y" }}</p>
+            <p><strong>Interesado:</strong> {{ comunicacion.interesado.nombre }} {{ comunicacion.interesado.apellido }}</p>
+            <p><strong>Observaciones:</strong> {{ comunicacion.observaciones }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

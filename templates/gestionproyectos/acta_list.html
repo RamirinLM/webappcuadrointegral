@@ -1,0 +1,27 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block gestion_content %}
+<div class="container-fluid">
+    <h1 class="page-title-gad mb-3">Actas de constitución</h1>
+    {% if puede_crear %}<p><a href="{% url 'gestionproyecto:acta_crear' %}" class="btn btn-gad-primary">Nueva acta</a></p>{% endif %}
+    <div class="table-responsive">
+        <table class="table table-gad table-striped">
+            <thead><tr><th>Alcance (resumen)</th><th>Usuario</th><th>Acciones</th></tr></thead>
+            <tbody>
+                {% for a in acta_list %}
+                <tr>
+                    <td>{{ a.alcance|truncatewords:15 }}</td>
+                    <td>{{ a.usuario.username }}</td>
+                    <td>
+                        <a href="{% url 'gestionproyecto:acta_detail' a.slug %}" class="btn btn-sm btn-outline-secondary">Ver</a>
+                        {% if user_puede_editar %}<a href="{% url 'gestionproyecto:acta_editar' a.slug %}" class="btn btn-sm btn-gad-secondary">Editar</a>{% endif %}
+                        {% if user_puede_eliminar %}<a href="{% url 'gestionproyecto:acta_eliminar' a.slug %}" class="btn btn-sm btn-outline-danger">Eliminar</a>{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-muted">No hay actas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

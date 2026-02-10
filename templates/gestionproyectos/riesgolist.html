@@ -1,5 +1,5 @@
 {% extends 'gestionproyectos/base.html' %}
-{% block content %}
+{% block gestion_content %}
     <h1>Bienvenido al Sistema de Gestión de Proyectos</h1>
     <h2> Riesgos </h2>
     <div class="container">
@@ -13,7 +13,7 @@
                 <p>
                     probabilidad: {{ riesgo.probabilidad }}
                 </p>
-                <a class="btn btn-primary" href="{% url 'riesgo_view' riesgo.slug %}">Ver más...</a>           
+                <a class="btn btn-primary" href="{% url 'gestionproyecto:riesgo_detail' riesgo.slug %}">Ver más...</a>           
             </div>
            
         </div>
@@ -21,5 +21,5 @@
         {% endfor %}
         </ul>
     </div>
-{% endblock content %}
+{% endblock gestion_content %}
    

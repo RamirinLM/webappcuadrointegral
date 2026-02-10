@@ -1,0 +1,17 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block gestion_content %}
+<div class="container-fluid">
+    <h1 class="page-title-gad mb-3">{{ interesado.nombre }} {{ interesado.apellido }}</h1>
+    {% if user_puede_editar %}
+    <p><a href="{% url 'gestionproyecto:interesado_editar' interesado.slug %}" class="btn btn-gad-secondary">Editar</a>
+    {% if user_puede_eliminar %}<a href="{% url 'gestionproyecto:interesado_eliminar' interesado.slug %}" class="btn btn-outline-danger">Eliminar</a>{% endif %}</p>
+    {% endif %}
+    <div class="card card-gad">
+        <div class="card-body">
+            <p><strong>Email:</strong> {{ interesado.email }}</p>
+            <p><strong>Rol:</strong> {{ interesado.rol }}</p>
+            <p><strong>Nivel poder:</strong> {{ interesado.get_nivel_poder_display }} | <strong>Interés:</strong> {{ interesado.get_nivel_interes_display }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -167,11 +167,10 @@
                             {% elif estado == 'En Progreso' %}bg-warning
                             {% elif estado == 'Completado' %}bg-success
                             {% else %}bg-danger{% endif %}" 
-                           role="progressbar" 
-                            data-width="{{ actividad.porcentajeCompletado }}"
-                            aria-valuenow="{{ actividad.porcentajeCompletado }}" 
+                           role="progressbar" style="width: {% widthratio cantidad total_proyectos 100 %}%"
+                            aria-valuenow="{{ cantidad }}" 
                             aria-valuemin="0" 
-                            aria-valuemax="100">
+                            aria-valuemax="{{ total_proyectos }}">
                         </div>
                     </div>
                 </div>

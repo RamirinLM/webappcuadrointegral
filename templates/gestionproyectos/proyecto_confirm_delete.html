@@ -1,0 +1,12 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block gestion_content %}
+<div class="container-fluid">
+    <h1 class="page-title-gad mb-3">Eliminar proyecto</h1>
+    <p>¿Está seguro de eliminar el proyecto <strong>{{ proyecto.nombre }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+        <a href="{% url 'gestionproyecto:proyecto_detail' proyecto.slug %}" class="btn btn-outline-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

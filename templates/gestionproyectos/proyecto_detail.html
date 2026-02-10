@@ -1,0 +1,78 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block gestion_content %}
+<div class="container-fluid">
+    <h1 class="page-title-gad mb-3">{{ proyecto.nombre }}</h1>
+    {% if user_puede_editar %}
+    <p>
+        <a href="{% url 'gestionproyecto:proyecto_editar' proyecto.slug %}" class="btn btn-gad-secondary">Editar proyecto</a>
+        {% if user_puede_eliminar %}
+        <a href="{% url 'gestionproyecto:proyecto_eliminar' proyecto.slug %}" class="btn btn-outline-danger">Eliminar</a>
+        {% endif %}
+    </p>
+    {% endif %}
+    <div class="card card-gad mb-3">
+        <div class="card-header">Datos del proyecto</div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <tr><th>Descripción</th><td>{{ proyecto.descripcion }}</td></tr>
+                <tr><th>Estado</th><td>{{ proyecto.get_estado_display }}</td></tr>
+                <tr><th>Fecha inicio</th><td>{{ proyecto.fecha_inicio|date:"d/m/Y" }}</td></tr>
+                <tr><th>Fecha fin</th><td>{{ proyecto.fecha_fin|date:"d/m/Y" }}</td></tr>
+            </table>
+        </div>
+    </div>
+    {% if proyecto.acta_constitucion %}
+    <div class="card card-gad mb-3">
+        <div class="card-header">Acta de constitución</div>
+        <div class="card-body">
+            <p><strong>Alcance:</strong> {{ proyecto.acta_constitucion.alcance|truncatewords:30 }}</p>
+            <p><strong>Objetivos:</strong> {{ proyecto.acta_constitucion.objetivos|truncatewords:30 }}</p>
+            <a href="{% url 'gestionproyecto:acta_detail' proyecto.acta_constitucion.slug %}">Ver acta completa</a>
+        </div>
+    </div>
+    {% endif %}
+    <div class="card card-gad mb-3">
+        <div class="card-header">Interesados</div>
+        <div class="card-body">
+            <table class="table table-sm table-gad">
+                <tr><th>Nombre</th><th>Email</th><th>Rol</th></tr>
+                {% for i in proyecto.interesados.all %}
+                <tr><td><a href="{% url 'gestionproyecto:interesado_detail' i.slug %}">{{ i.nombre }} {{ i.apellido }}</a></td><td>{{ i.email }}</td><td>{{ i.rol }}</td></tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-muted">Sin interesados</td></tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+    <div class="card card-gad mb-3">
+        <div class="card-header">Comunicaciones</div>
+        <div class="card-body">
+            {% for c in proyecto.comunicaciones.all %}
+            <p>{{ c.fecha|date:"d/m/Y" }} – {{ c.interesado.nombre }}: {{ c.observaciones|truncatewords:15 }} <a href="{% url 'gestionproyecto:comunicacion_detail' c.slug %}">Ver</a></p>
+            {% empty %}
+            <p class="text-muted">Sin comunicaciones</p>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card card-gad mb-3">
+        <div class="card-header">Riesgos</div>
+        <div class="card-body">
+            {% for r in proyecto.riesgos.all %}
+            <p>{{ r.descripcion|truncatewords:10 }} <a href="{% url 'gestionproyecto:riesgo_detail' r.slug %}">Ver</a></p>
+            {% empty %}
+            <p class="text-muted">Sin riesgos</p>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="card card-gad mb-3">
+        <div class="card-header">Alcances</div>
+        <div class="card-body">
+            {% for a in proyecto.alcances.all %}
+            <p>{{ a.descripcion|truncatewords:10 }} <a href="{% url 'gestionproyecto:alcance_detail' a.slug %}">Ver</a></p>
+            {% empty %}
+            <p class="text-muted">Sin alcances</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

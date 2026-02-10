@@ -1,0 +1,8 @@
+{% extends 'gestionproyectos/base.html' %}
+{% block gestion_content %}
+<div class="container-fluid">
+    <h1 class="page-title-gad mb-3">Eliminar riesgo</h1>
+    <p>¿Eliminar este riesgo?</p>
+    <form method="post">{% csrf_token %}<button type="submit" class="btn btn-danger">Sí, eliminar</button> <a href="{% url 'gestionproyecto:riesgo_list' %}" class="btn btn-outline-secondary">Cancelar</a></form>
+</div>
+{% endblock %}
