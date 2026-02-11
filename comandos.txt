@@ -1,19 +1,6 @@
-Ejecutar Visual studio code como administrador
-Ubicado en la carpeta del proyecto ejecutar en una terminal de visual studio code
-Check python version
-    python
-Crete virtual environment 
-    python -m venv env
-activar ambiente virtual
-    ctrl+shift+p select interpreter Seleccionar el ambiente anterior 
-    abrir nueva terminal, debe aparecer el prompt con (env)
-instalar django
-    pip install django
-upgrade pip
-    python -m pip install --upgrade pip
 ejecutar el servidor de prueba
     python manage.py runserver
 acceder a la ip de prueba y seleccionar administrar 
 credenciales de super usuario
-    user: ramiro
+    user: admin
     password: Tesis2026

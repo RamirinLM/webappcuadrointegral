@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Seguimiento CMI{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Seguimiento CMI</h1>
+    <a href="{% url 'seguimiento_create' %}" class="btn btn-primary mb-3">Agregar Seguimiento</a>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Proyecto</th>
+                <th>Fecha</th>
+                <th>Perspectiva</th>
+                <th>Indicador</th>
+                <th>Valor Actual</th>
+                <th>Valor Objetivo</th>
+                <th>Progreso (%)</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for seguimiento in seguimientos %}
+            <tr>
+                <td>{{ seguimiento.proyecto.name }}</td>
+                <td>{{ seguimiento.fecha }}</td>
+                <td>{{ seguimiento.get_perspectiva_display }}</td>
+                <td>{{ seguimiento.indicador }}</td>
+                <td>{{ seguimiento.valor_actual }}</td>
+                <td>{{ seguimiento.valor_objetivo }}</td>
+                <td>{{ seguimiento.progreso }}</td>
+                <td>
+                    <a href="{% url 'seguimiento_edit' seguimiento.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">No hay seguimientos registrados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagrama de Gantt - {{ project.name }}{% endblock %}
+
+{% block content %}
+<h1>Diagrama de Gantt - {{ project.name }}</h1>
+<p>Diagrama simple de Gantt para las actividades del proyecto.</p>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Actividad</th>
+            <th>Fecha de Inicio</th>
+            <th>Fecha de Fin</th>
+            <th>Estado</th>
+            <th>Progreso</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for activity in activities %}
+            <tr>
+                <td>{{ activity.name }}</td>
+                <td>{{ activity.start_date }}</td>
+                <td>{{ activity.end_date }}</td>
+                <td>{{ activity.get_status_display }}</td>
+                <td>
+                    {% if activity.status == 'completed' %}
+                        100%
+                    {% elif activity.status == 'in_progress' %}
+                        50%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
+{% endblock %}

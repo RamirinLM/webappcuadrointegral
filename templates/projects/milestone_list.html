@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Hitos{% endblock %}
+
+{% block content %}
+<h1>Hitos</h1>
+<a href="{% url 'milestone_create' %}" class="btn btn-primary mb-3">Crear Nuevo Hito</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Proyecto</th>
+            <th>Fecha Límite</th>
+            <th>Completado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for milestone in milestones %}
+            <tr>
+                <td>{{ milestone.name }}</td>
+                <td>{{ milestone.project.name }}</td>
+                <td>{{ milestone.due_date }}</td>
+                <td>{% if milestone.completed %}Sí{% else %}No{% endif %}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

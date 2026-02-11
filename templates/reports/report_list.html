@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block title %}Reportes{% endblock %}
+
+{% block content %}
+<h1>Reportes</h1>
+<p>Reportes básicos para proyectos.</p>
+<ul>
+    {% for project in projects %}
+        <li>{{ project.name }} - Estado: {{ project.get_status_display }}
+            <a href="{% url 'reports:gantt_chart' project.id %}" class="btn btn-sm btn-info">Ver Diagrama de Gantt</a>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

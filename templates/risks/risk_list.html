@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Riesgos{% endblock %}
+
+{% block content %}
+<h1>Riesgos</h1>
+<a href="{% url 'risks:risk_create' %}" class="btn btn-primary mb-3">Crear Nuevo Riesgo</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Descripción</th>
+            <th>Proyecto</th>
+            <th>Probabilidad</th>
+            <th>Impacto</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for risk in risks %}
+            <tr>
+                <td>{{ risk.description }}</td>
+                <td>{{ risk.project.name }}</td>
+                <td>{{ risk.get_probability_display }}</td>
+                <td>{{ risk.get_impact_display }}</td>
+                <td>{{ risk.get_status_display }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

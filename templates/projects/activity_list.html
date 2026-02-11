@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Actividades{% endblock %}
+
+{% block content %}
+<h1>Actividades</h1>
+<a href="{% url 'activity_create' %}" class="btn btn-primary mb-3">Crear Nueva Actividad</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Proyecto</th>
+            <th>Estado</th>
+            <th>Asignado A</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for activity in activities %}
+            <tr>
+                <td>{{ activity.name }}</td>
+                <td>{{ activity.project.name }}</td>
+                <td>{{ activity.get_status_display }}</td>
+                <td>{{ activity.assigned_to.username|default:"No asignado" }}</td>
+                <td>
+                    <a href="{% url 'activity_edit' activity.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

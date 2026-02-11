@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Interesados{% endblock %}
+
+{% block content %}
+<h1>Interesados</h1>
+<a href="{% url 'stakeholders:stakeholder_create' %}" class="btn btn-primary mb-3">Crear Nuevo Interesado</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Correo Electrónico</th>
+            <th>Rol</th>
+            <th>Interés</th>
+            <th>Poder</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stakeholder in stakeholders %}
+            <tr>
+                <td>{{ stakeholder.name }}</td>
+                <td>{{ stakeholder.email }}</td>
+                <td>{{ stakeholder.get_role_display }}</td>
+                <td>{{ stakeholder.get_interest_level_display }}</td>
+                <td>{{ stakeholder.get_power_level_display }}</td>
+                <td>
+                    <a href="{% url 'stakeholders:stakeholder_edit' stakeholder.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

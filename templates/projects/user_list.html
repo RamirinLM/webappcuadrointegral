@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Usuarios{% endblock %}
+
+{% block content %}
+<h1>Usuarios</h1>
+<a href="{% url 'user_create' %}" class="btn btn-primary mb-3">Crear Nuevo Usuario</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre de Usuario</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Activo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>{{ user.first_name }}</td>
+                <td>{{ user.last_name }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ user.userprofile.get_role_display }}</td>
+                <td>{% if user.is_active %}Sí{% else %}No{% endif %}</td>
+                <td>
+                    <a href="{% url 'user_edit' user.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="{% url 'user_delete' user.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

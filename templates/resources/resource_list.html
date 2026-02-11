@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Recursos{% endblock %}
+
+{% block content %}
+<h1>Recursos</h1>
+<a href="{% url 'resources:resource_create' %}" class="btn btn-primary mb-3">Crear Nuevo Recurso</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Proyecto</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Costo Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for resource in resources %}
+            <tr>
+                <td>{{ resource.name }}</td>
+                <td>{{ resource.project.name }}</td>
+                <td>{{ resource.get_type_display }}</td>
+                <td>{{ resource.quantity }}</td>
+                <td>${{ resource.total_cost }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
