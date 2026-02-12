@@ -1,5 +1,5 @@
 from django.db import models
-from projects.models import Project
+from projects.models import Project, Notification
 
 class Risk(models.Model):
     PROBABILITY_CHOICES = [
@@ -25,6 +25,15 @@ class Risk(models.Model):
     mitigation_plan = models.TextField(blank=True, verbose_name='Plan de Mitigación')
     identified_by = models.CharField(max_length=200, verbose_name='Identificado Por')
     identified_date = models.DateField(auto_now_add=True, verbose_name='Fecha de Identificación')
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.probability == 'high' or self.impact == 'high':
+            Notification.objects.create(
+                project=self.project,
+                alert_type='risk',
+                message=f'Riesgo de alto impacto identificado: {self.description}'
+            )
 
     def __str__(self):
         return f"Riesgo: {self.description[:50]} - {self.project.name}"

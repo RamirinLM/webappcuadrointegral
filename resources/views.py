@@ -6,17 +6,17 @@ from .forms import ResourceForm
 
 @login_required
 def resource_list(request):
-    resources = Resource.objects.all()
+    resources = Resource.objects.filter(activity__project__created_by=request.user)
     return render(request, 'resources/resource_list.html', {'resources': resources})
 
 @login_required
 def resource_create(request):
     if request.method == 'POST':
-        form = ResourceForm(request.POST)
+        form = ResourceForm(request.POST, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, 'Resource created successfully.')
             return redirect('resources:resource_list')
     else:
-        form = ResourceForm()
+        form = ResourceForm(user=request.user)
     return render(request, 'resources/resource_form.html', {'form': form})

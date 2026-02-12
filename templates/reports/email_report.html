@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Informe de Proyecto</title>
+</head>
+<body>
+    <h1>Informe Automático del Proyecto: {{ project.name }}</h1>
+    <p><strong>Descripción:</strong> {{ project.description }}</p>
+    <p><strong>Progreso:</strong> {{ progress|floatformat:1 }}%</p>
+    <p><strong>Actividades Completadas:</strong> {{ completed }} / {{ total }}</p>
+    <p><strong>Fecha de Inicio:</strong> {{ project.start_date }}</p>
+    <p><strong>Fecha de Fin:</strong> {{ project.end_date }}</p>
+    <p><strong>Estado:</strong> {{ project.get_status_display }}</p>
+    <hr>
+    <p>Este es un informe automático generado por el Sistema de Gestión de Proyectos GAD Célica.</p>
+</body>
+</html>

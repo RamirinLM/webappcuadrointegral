@@ -2,13 +2,33 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from .models import Project, Activity, Milestone, Seguimiento
-from .forms import ProjectForm, ActivityForm, MilestoneForm, UserForm, SeguimientoForm
+from functools import wraps
+from .models import Project, Activity, Milestone, Seguimiento, ChangeRequest, ActaConstitucion
+from .forms import ProjectForm, ActivityForm, MilestoneForm, UserForm, SeguimientoForm, ActaConstitucionForm
+
+def jefe_departamental_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not hasattr(request.user, 'userprofile') or request.user.userprofile.role != 'jefe_departamental':
+            messages.error(request, 'Acceso denegado. Solo el Jefe Departamental tiene permisos para esta acción.')
+            return redirect('dashboard')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
 @login_required
 def dashboard(request):
     projects = Project.objects.filter(created_by=request.user)
-    return render(request, 'projects/dashboard.html', {'projects': projects})
+    active_projects = projects.filter(status__in=['in_progress', 'planning'])
+    pending_tasks = Activity.objects.filter(project__created_by=request.user, status='pending')
+    latest_reports = Seguimiento.objects.filter(proyecto__created_by=request.user).order_by('-fecha')[:5]
+    user_role = request.user.userprofile.get_role_display() if hasattr(request.user, 'userprofile') else 'Sin rol'
+    return render(request, 'projects/dashboard.html', {
+        'projects': projects,
+        'active_projects': active_projects,
+        'pending_tasks': pending_tasks,
+        'latest_reports': latest_reports,
+        'user_role': user_role
+    })
 
 @login_required
 def project_list(request):
@@ -28,34 +48,44 @@ def project_detail(request, pk):
 
 @login_required
 def project_create(request):
-    if request.user.userprofile.role not in ['tecnico_proyectos', 'gestor_proyectos']:
+    if request.user.userprofile.role not in ['tecnico_proyectos', 'gestor_proyectos', 'jefe_departamental']:
         messages.error(request, 'No tienes permisos para crear proyectos.')
         return redirect('project_list')
     if request.method == 'POST':
         form = ProjectForm(request.POST)
-        if form.is_valid():
+        acta_form = ActaConstitucionForm(request.POST)
+        if form.is_valid() and acta_form.is_valid():
             project = form.save(commit=False)
             project.created_by = request.user
+            project.status = 'planning'  # or 'pending'
             project.save()
-            messages.success(request, 'Proyecto creado exitosamente.')
+            acta = acta_form.save(commit=False)
+            acta.proyecto = project
+            acta.save()
+            messages.success(request, 'Proyecto y acta de constitución creados exitosamente.')
             return redirect('project_detail', pk=project.pk)
     else:
         form = ProjectForm()
-    return render(request, 'projects/project_form.html', {'form': form})
+        acta_form = ActaConstitucionForm()
+    return render(request, 'projects/project_form.html', {'form': form, 'acta_form': acta_form})
 
+@jefe_departamental_required
 @login_required
 def project_edit(request, pk):
     project = get_object_or_404(Project, pk=pk, created_by=request.user)
     if request.method == 'POST':
         form = ProjectForm(request.POST, instance=project)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Project updated successfully.')
+            project = form.save()
+            project.status = 'modified'
+            project.save()
+            messages.success(request, 'Proyecto actualizado. Pendiente de aprobación.')
             return redirect('project_detail', pk=project.pk)
     else:
         form = ProjectForm(instance=project)
     return render(request, 'projects/project_form.html', {'form': form})
 
+@jefe_departamental_required
 @login_required
 def project_delete(request, pk):
     project = get_object_or_404(Project, pk=pk, created_by=request.user)
@@ -70,6 +100,7 @@ def activity_list(request):
     activities = Activity.objects.filter(project__created_by=request.user)
     return render(request, 'projects/activity_list.html', {'activities': activities})
 
+@jefe_departamental_required
 @login_required
 def activity_create(request):
     if request.method == 'POST':
@@ -82,6 +113,7 @@ def activity_create(request):
         form = ActivityForm()
     return render(request, 'projects/activity_form.html', {'form': form})
 
+@jefe_departamental_required
 @login_required
 def activity_edit(request, pk):
     activity = get_object_or_404(Activity, pk=pk, project__created_by=request.user)
@@ -100,6 +132,7 @@ def milestone_list(request):
     milestones = Milestone.objects.filter(project__created_by=request.user)
     return render(request, 'projects/milestone_list.html', {'milestones': milestones})
 
+@jefe_departamental_required
 @login_required
 def milestone_create(request):
     if request.method == 'POST':
@@ -112,19 +145,15 @@ def milestone_create(request):
         form = MilestoneForm()
     return render(request, 'projects/milestone_form.html', {'form': form})
 
+@jefe_departamental_required
 @login_required
 def user_list(request):
-    if request.user.userprofile.role != 'gestor_proyectos':
-        messages.error(request, 'No tienes permisos para gestionar usuarios.')
-        return redirect('dashboard')
     users = User.objects.all()
     return render(request, 'projects/user_list.html', {'users': users})
 
+@jefe_departamental_required
 @login_required
 def user_create(request):
-    if request.user.userprofile.role != 'gestor_proyectos':
-        messages.error(request, 'No tienes permisos para crear usuarios.')
-        return redirect('dashboard')
     if request.method == 'POST':
         form = UserForm(request.POST)
         if form.is_valid():
@@ -135,11 +164,9 @@ def user_create(request):
         form = UserForm()
     return render(request, 'projects/user_form.html', {'form': form})
 
+@jefe_departamental_required
 @login_required
 def user_edit(request, pk):
-    if request.user.userprofile.role != 'gestor_proyectos':
-        messages.error(request, 'No tienes permisos para editar usuarios.')
-        return redirect('dashboard')
     user = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
         form = UserForm(request.POST, instance=user)
@@ -151,11 +178,9 @@ def user_edit(request, pk):
         form = UserForm(instance=user)
     return render(request, 'projects/user_form.html', {'form': form})
 
+@jefe_departamental_required
 @login_required
 def user_delete(request, pk):
-    if request.user.userprofile.role != 'gestor_proyectos':
-        messages.error(request, 'No tienes permisos para eliminar usuarios.')
-        return redirect('dashboard')
     user = get_object_or_404(User, pk=pk)
     if request.method == 'POST':
         user.delete()
@@ -168,6 +193,7 @@ def seguimiento_list(request):
     seguimientos = Seguimiento.objects.filter(proyecto__created_by=request.user)
     return render(request, 'projects/seguimiento_list.html', {'seguimientos': seguimientos})
 
+@jefe_departamental_required
 @login_required
 def seguimiento_create(request):
     if request.method == 'POST':
@@ -180,6 +206,7 @@ def seguimiento_create(request):
         form = SeguimientoForm()
     return render(request, 'projects/seguimiento_form.html', {'form': form})
 
+@jefe_departamental_required
 @login_required
 def seguimiento_edit(request, pk):
     seguimiento = get_object_or_404(Seguimiento, pk=pk, proyecto__created_by=request.user)
@@ -192,4 +219,89 @@ def seguimiento_edit(request, pk):
     else:
         form = SeguimientoForm(instance=seguimiento)
     return render(request, 'projects/seguimiento_form.html', {'form': form})
+
+@login_required
+def change_request_list(request):
+    if request.user.userprofile.role == 'jefe_departamental':
+        change_requests = ChangeRequest.objects.all()
+    else:
+        change_requests = ChangeRequest.objects.filter(requested_by=request.user)
+    return render(request, 'projects/change_request_list.html', {'change_requests': change_requests})
+
+@login_required
+def change_request_create(request):
+    if request.method == 'POST':
+        # Assuming a form, but for simplicity, use model form
+        pass  # Implement form
+    return render(request, 'projects/change_request_form.html')
+
+@login_required
+def change_request_approve(request, pk):
+    if request.user.userprofile.role != 'jefe_departamental':
+        messages.error(request, 'No tienes permisos para aprobar cambios.')
+        return redirect('change_request_list')
+    change_request = get_object_or_404(ChangeRequest, pk=pk)
+    change_request.status = 'approved'
+    change_request.approved_by = request.user
+    change_request.save()
+    messages.success(request, 'Cambio aprobado.')
+    return redirect('change_request_list')
+
+@login_required
+def project_approve(request, pk):
+    if request.user.userprofile.role != 'jefe_departamental':
+        messages.error(request, 'No tienes permisos para aprobar proyectos.')
+        return redirect('project_list')
+    project = get_object_or_404(Project, pk=pk)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'approve':
+            if project.status == 'modified':
+                project.status = 'in_progress'
+                messages.success(request, 'Cambios en proyecto aprobados.')
+            else:
+                project.status = 'in_progress'
+                messages.success(request, 'Proyecto aprobado.')
+        elif action == 'reject':
+            if project.status == 'modified':
+                project.status = 'on_hold'
+                messages.success(request, 'Cambios en proyecto rechazados.')
+            else:
+                project.status = 'on_hold'
+                messages.success(request, 'Proyecto rechazado.')
+        project.save()
+        return redirect('project_list')
+    return render(request, 'projects/project_approve.html', {'project': project})
+
+@login_required
+def acta_constitucion_create(request, project_id):
+    project = get_object_or_404(Project, pk=project_id, created_by=request.user)
+    if hasattr(project, 'actaconstitucion'):
+        messages.warning(request, 'El proyecto ya tiene un acta de constitución.')
+        return redirect('project_detail', pk=project.pk)
+    if request.method == 'POST':
+        form = ActaConstitucionForm(request.POST)
+        if form.is_valid():
+            acta = form.save(commit=False)
+            acta.proyecto = project
+            acta.save()
+            messages.success(request, 'Acta de constitución creada exitosamente.')
+            return redirect('project_detail', pk=project.pk)
+    else:
+        form = ActaConstitucionForm(initial={'proyecto': project})
+    return render(request, 'projects/acta_constitucion_form.html', {'form': form, 'project': project})
+
+@login_required
+def acta_constitucion_edit(request, project_id):
+    project = get_object_or_404(Project, pk=project_id, created_by=request.user)
+    acta = get_object_or_404(ActaConstitucion, proyecto=project)
+    if request.method == 'POST':
+        form = ActaConstitucionForm(request.POST, instance=acta)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Acta de constitución actualizada exitosamente.')
+            return redirect('project_detail', pk=project.pk)
+    else:
+        form = ActaConstitucionForm(instance=acta)
+    return render(request, 'projects/acta_constitucion_form.html', {'form': form, 'project': project})
 

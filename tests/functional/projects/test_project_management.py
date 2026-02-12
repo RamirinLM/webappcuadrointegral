@@ -58,7 +58,7 @@ class ProjectManagementTestCase(TestCase):
         self.assertEqual(response.status_code, 302)
         project.refresh_from_db()
         self.assertEqual(project.name, 'Edited Name')
-        self.assertEqual(project.status, 'in_progress')
+        self.assertEqual(project.status, 'modified')  # Status set to modified for approval
 
     def test_activity_creation(self):
         project = Project.objects.create(

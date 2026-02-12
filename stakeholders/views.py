@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import Stakeholder
+from .models import Stakeholder, Feedback
 from .forms import StakeholderForm
 
 @login_required
@@ -33,3 +33,15 @@ def stakeholder_edit(request, pk):
     else:
         form = StakeholderForm(instance=stakeholder)
     return render(request, 'stakeholders/stakeholder_form.html', {'form': form})
+
+@login_required
+def feedback_list(request):
+    feedbacks = Feedback.objects.filter(project__created_by=request.user)
+    return render(request, 'stakeholders/feedback_list.html', {'feedbacks': feedbacks})
+
+@login_required
+def feedback_create(request):
+    if request.method == 'POST':
+        # Simple form handling
+        pass
+    return render(request, 'stakeholders/feedback_form.html')

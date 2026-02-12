@@ -1,5 +1,5 @@
 from django.db import models
-from projects.models import Project
+from projects.models import Activity
 
 class Resource(models.Model):
     TYPE_CHOICES = [
@@ -9,7 +9,7 @@ class Resource(models.Model):
         ('financial', 'Financiero'),
         ('other', 'Otro'),
     ]
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name='Proyecto')
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, null=True, blank=True, verbose_name='Actividad')
     name = models.CharField(max_length=200, verbose_name='Nombre')
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, verbose_name='Tipo')
     quantity = models.PositiveIntegerField(verbose_name='Cantidad')
@@ -22,7 +22,7 @@ class Resource(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} - {self.project.name}"
+        return f"{self.name} - {self.activity.name}"
 
     class Meta:
         verbose_name = 'Recurso'

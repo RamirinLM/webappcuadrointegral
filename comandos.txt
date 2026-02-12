@@ -4,3 +4,11 @@ acceder a la ip de prueba y seleccionar administrar
 credenciales de super usuario
     user: admin
     password: Tesis2026
+usuarios de prueba
+    user: testuser
+    password: password123
+    rol: Tecnico de proyectos
+
+    user: jefe
+    password: password123
+    rol: Jefe Departamental

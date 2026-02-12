@@ -4,11 +4,17 @@
 
 {% block content %}
 <h1>Reportes</h1>
-<p>Reportes básicos para proyectos.</p>
+<p>Reportes disponibles para proyectos.</p>
 <ul>
     {% for project in projects %}
         <li>{{ project.name }} - Estado: {{ project.get_status_display }}
-            <a href="{% url 'reports:gantt_chart' project.id %}" class="btn btn-sm btn-info">Ver Diagrama de Gantt</a>
+            <a href="{% url 'reports:gantt_chart' project.id %}" class="btn btn-sm btn-info">Diagrama de Gantt</a>
+            <a href="{% url 'reports:progress_report' project.id %}" class="btn btn-sm btn-success">Informe de Progreso</a>
+            <a href="{% url 'reports:cost_report' project.id %}" class="btn btn-sm btn-warning">Informe de Costos</a>
+            <a href="{% url 'reports:status_report' project.id %}" class="btn btn-sm btn-primary">Informe de Estado</a>
+            <a href="{% url 'reports:calendar_view' project.id %}" class="btn btn-sm btn-secondary">Calendario</a>
+            <a href="{% url 'reports:performance_graphs' project.id %}" class="btn btn-sm btn-dark">Gráficos de Rendimiento</a>
+            <a href="{% url 'reports:export_csv' project.id %}" class="btn btn-sm btn-outline-info">Exportar CSV</a>
         </li>
     {% endfor %}
 </ul>

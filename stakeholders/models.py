@@ -33,3 +33,17 @@ class Stakeholder(models.Model):
     class Meta:
         verbose_name = 'Interesado'
         verbose_name_plural = 'Interesados'
+
+class Feedback(models.Model):
+    stakeholder = models.ForeignKey(Stakeholder, on_delete=models.CASCADE, verbose_name='Interesado')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, verbose_name='Proyecto')
+    rating = models.IntegerField(choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], verbose_name='Calificación')
+    comments = models.TextField(blank=True, verbose_name='Comentarios')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'Feedback de {self.stakeholder.name} en {self.project.name}'
+
+    class Meta:
+        verbose_name = 'Retroalimentación'
+        verbose_name_plural = 'Retroalimentaciones'

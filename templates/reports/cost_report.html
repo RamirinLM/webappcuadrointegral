@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Informe de Costos - {{ project.name }}{% endblock %}
+
+{% block content %}
+<h1>Informe de Costos - {{ project.name }}</h1>
+<p><strong>Costo Total:</strong> ${{ total_cost }}</p>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Actividad</th>
+            <th>Costo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for activity in activities %}
+            <tr>
+                <td>{{ activity.name }}</td>
+                <td>${{ activity.cost }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
+{% endblock %}

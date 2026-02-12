@@ -16,24 +16,8 @@
             {{ form.fecha }}
         </div>
         <div class="mb-3">
-            <label for="{{ form.perspectiva.id_for_label }}" class="form-label">Perspectiva CMI</label>
-            {{ form.perspectiva }}
-        </div>
-        <div class="mb-3">
-            <label for="{{ form.indicador.id_for_label }}" class="form-label">Indicador</label>
-            {{ form.indicador }}
-        </div>
-        <div class="mb-3">
-            <label for="{{ form.valor_actual.id_for_label }}" class="form-label">Valor Actual</label>
-            {{ form.valor_actual }}
-        </div>
-        <div class="mb-3">
-            <label for="{{ form.valor_objetivo.id_for_label }}" class="form-label">Valor Objetivo</label>
-            {{ form.valor_objetivo }}
-        </div>
-        <div class="mb-3">
-            <label for="{{ form.descripcion.id_for_label }}" class="form-label">Descripción</label>
-            {{ form.descripcion }}
+            <label for="{{ form.observacion.id_for_label }}" class="form-label">Observación</label>
+            {{ form.observacion }}
         </div>
         <button type="submit" class="btn btn-primary">Guardar</button>
         <a href="{% url 'seguimiento_list' %}" class="btn btn-secondary">Cancelar</a>

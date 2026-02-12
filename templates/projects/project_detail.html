@@ -10,6 +10,18 @@
 <p><strong>Fecha de Fin:</strong> {{ project.end_date }}</p>
 <p><strong>Presupuesto:</strong> ${{ project.budget }}</p>
 
+<h2>Acta de Constitución</h2>
+{% if project.actaconstitucion %}
+    <p><strong>Alcance:</strong> {{ project.actaconstitucion.alcance }}</p>
+    <p><strong>Entregables:</strong> {{ project.actaconstitucion.entregables }}</p>
+    <p><strong>Justificación:</strong> {{ project.actaconstitucion.justificacion }}</p>
+    <p><strong>Objetivos:</strong> {{ project.actaconstitucion.objetivos }}</p>
+    <a href="{% url 'acta_constitucion_edit' project.pk %}" class="btn btn-warning">Editar Acta</a>
+{% else %}
+    <p>No hay acta de constitución registrada.</p>
+    <a href="{% url 'acta_constitucion_create' project.pk %}" class="btn btn-primary">Crear Acta de Constitución</a>
+{% endif %}
+
 <h2>Actividades</h2>
 <ul>
     {% for activity in activities %}

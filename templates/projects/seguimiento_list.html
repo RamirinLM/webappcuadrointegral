@@ -11,11 +11,12 @@
             <tr>
                 <th>Proyecto</th>
                 <th>Fecha</th>
-                <th>Perspectiva</th>
-                <th>Indicador</th>
-                <th>Valor Actual</th>
-                <th>Valor Objetivo</th>
-                <th>Progreso (%)</th>
+                <th>Observación</th>
+                <th>PV</th>
+                <th>EV</th>
+                <th>AC</th>
+                <th>CPI</th>
+                <th>SPI</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -24,18 +25,19 @@
             <tr>
                 <td>{{ seguimiento.proyecto.name }}</td>
                 <td>{{ seguimiento.fecha }}</td>
-                <td>{{ seguimiento.get_perspectiva_display }}</td>
-                <td>{{ seguimiento.indicador }}</td>
-                <td>{{ seguimiento.valor_actual }}</td>
-                <td>{{ seguimiento.valor_objetivo }}</td>
-                <td>{{ seguimiento.progreso }}</td>
+                <td>{{ seguimiento.observacion }}</td>
+                <td>${{ seguimiento.pv }}</td>
+                <td>${{ seguimiento.ev }}</td>
+                <td>${{ seguimiento.ac }}</td>
+                <td>{{ seguimiento.cpi }}</td>
+                <td>{{ seguimiento.spi }}</td>
                 <td>
                     <a href="{% url 'seguimiento_edit' seguimiento.pk %}" class="btn btn-sm btn-warning">Editar</a>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8">No hay seguimientos registrados.</td>
+                <td colspan="9">No hay seguimientos registrados.</td>
             </tr>
             {% endfor %}
         </tbody>

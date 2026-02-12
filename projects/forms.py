@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Project, Activity, Milestone, UserProfile, Seguimiento
+from .models import Project, Activity, Milestone, UserProfile, Seguimiento, ActaConstitucion
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -60,7 +60,12 @@ class UserForm(forms.ModelForm):
 class SeguimientoForm(forms.ModelForm):
     class Meta:
         model = Seguimiento
-        fields = ['proyecto', 'fecha', 'perspectiva', 'indicador', 'valor_actual', 'valor_objetivo', 'descripcion']
+        fields = ['proyecto', 'fecha', 'observacion']
         widgets = {
             'fecha': forms.DateInput(attrs={'type': 'date'}),
         }
+
+class ActaConstitucionForm(forms.ModelForm):
+    class Meta:
+        model = ActaConstitucion
+        fields = ['alcance', 'entregables', 'justificacion', 'objetivos']

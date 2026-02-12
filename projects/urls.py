@@ -20,4 +20,6 @@ urlpatterns = [
     path('seguimiento/', views.seguimiento_list, name='seguimiento_list'),
     path('seguimiento/create/', views.seguimiento_create, name='seguimiento_create'),
     path('seguimiento/<int:pk>/edit/', views.seguimiento_edit, name='seguimiento_edit'),
+    path('acta/<int:project_id>/create/', views.acta_constitucion_create, name='acta_constitucion_create'),
+    path('acta/<int:project_id>/edit/', views.acta_constitucion_edit, name='acta_constitucion_edit'),
 ]

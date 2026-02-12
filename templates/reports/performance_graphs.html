@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Gráficos de Rendimiento - {{ project.name }}{% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<h1>Gráficos de Rendimiento del Proyecto: {{ project.name }}</h1>
+
+<div style="width: 50%; margin: auto;">
+    <canvas id="statusChart"></canvas>
+</div>
+
+<div style="width: 50%; margin: auto; margin-top: 50px;">
+    <canvas id="costChart"></canvas>
+</div>
+
+<script>
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    const statusChart = new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Pendiente', 'En Progreso', 'Completada'],
+            datasets: [{
+                data: [{{ status_data.pending }}, {{ status_data.in_progress }}, {{ status_data.completed }}],
+                backgroundColor: ['#ffc107', '#007bff', '#28a745'],
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Estado de Actividades'
+                }
+            }
+        }
+    });
+
+    // Cost Chart
+    const costCtx = document.getElementById('costChart').getContext('2d');
+    const costLabels = {{ cost_labels|safe }};
+    const costData = {{ cost_data|safe }};
+    const costChart = new Chart(costCtx, {
+        type: 'bar',
+        data: {
+            labels: costLabels,
+            datasets: [{
+                label: 'Costo',
+                data: costData,
+                backgroundColor: '#007bff',
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Costos por Actividad'
+                }
+            }
+        }
+    });
+</script>
+<a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
+{% endblock %}

@@ -4,36 +4,118 @@
 
 {% block content %}
 <h1>Diagrama de Gantt - {{ project.name }}</h1>
-<p>Diagrama simple de Gantt para las actividades del proyecto.</p>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Actividad</th>
-            <th>Fecha de Inicio</th>
-            <th>Fecha de Fin</th>
-            <th>Estado</th>
-            <th>Progreso</th>
-        </tr>
-    </thead>
-    <tbody>
+<div id="gantt-chart" style="overflow-x: auto;"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const activities = [
         {% for activity in activities %}
-            <tr>
-                <td>{{ activity.name }}</td>
-                <td>{{ activity.start_date }}</td>
-                <td>{{ activity.end_date }}</td>
-                <td>{{ activity.get_status_display }}</td>
-                <td>
-                    {% if activity.status == 'completed' %}
-                        100%
-                    {% elif activity.status == 'in_progress' %}
-                        50%
-                    {% else %}
-                        0%
-                    {% endif %}
-                </td>
-            </tr>
+        {
+            name: "{{ activity.name }}",
+            start: "{{ activity.start_date|date:'Y-m-d' }}",
+            end: "{{ activity.end_date|date:'Y-m-d' }}",
+            status: "{{ activity.status }}",
+            type: "activity"
+        },
         {% endfor %}
-    </tbody>
-</table>
+        {% for milestone in milestones %}
+        {
+            name: "{{ milestone.name }}",
+            start: "{{ milestone.due_date|date:'Y-m-d' }}",
+            end: "{{ milestone.due_date|date:'Y-m-d' }}",
+            status: "milestone",
+            type: "milestone"
+        },
+        {% endfor %}
+    ];
+
+    const projectStart = "{{ project.start_date|date:'Y-m-d' }}";
+    const projectEnd = "{{ project.end_date|date:'Y-m-d' }}";
+
+    createGanttChart(activities, projectStart, projectEnd);
+});
+
+function createGanttChart(tasks, startDate, endDate) {
+    const container = document.getElementById('gantt-chart');
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    // Create timeline header
+    const timeline = document.createElement('div');
+    timeline.style.display = 'flex';
+    timeline.style.borderBottom = '2px solid #000';
+    timeline.style.marginBottom = '10px';
+
+    for (let i = 0; i < totalDays; i++) {
+        const day = new Date(start);
+        day.setDate(start.getDate() + i);
+        const dayDiv = document.createElement('div');
+        dayDiv.style.width = '30px';
+        dayDiv.style.textAlign = 'center';
+        dayDiv.style.fontSize = '10px';
+        dayDiv.style.padding = '5px';
+        dayDiv.textContent = day.getDate();
+        timeline.appendChild(dayDiv);
+    }
+
+    container.appendChild(timeline);
+
+    // Create task rows
+    tasks.forEach(task => {
+        const taskRow = document.createElement('div');
+        taskRow.style.display = 'flex';
+        taskRow.style.alignItems = 'center';
+        taskRow.style.marginBottom = '5px';
+
+        // Task name
+        const nameDiv = document.createElement('div');
+        nameDiv.style.width = '200px';
+        nameDiv.style.fontWeight = 'bold';
+        nameDiv.textContent = task.name;
+        taskRow.appendChild(nameDiv);
+
+        // Task bar container
+        const barContainer = document.createElement('div');
+        barContainer.style.display = 'flex';
+        barContainer.style.flex = '1';
+        barContainer.style.position = 'relative';
+
+        const taskStart = new Date(task.start);
+        const taskEnd = new Date(task.end);
+        const taskDays = Math.ceil((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1;
+        const offsetDays = Math.floor((taskStart - start) / (1000 * 60 * 60 * 24));
+
+        const bar = document.createElement('div');
+        bar.style.position = 'absolute';
+        bar.style.left = `${offsetDays * 30}px`;
+        bar.style.width = `${taskDays * 30}px`;
+        bar.style.height = '20px';
+        bar.style.borderRadius = '3px';
+
+        if (task.type === 'milestone') {
+            bar.style.backgroundColor = '#dc3545'; // Red for milestones
+            bar.style.width = '10px';
+            bar.style.height = '10px';
+            bar.style.borderRadius = '50%';
+            bar.style.left = `${offsetDays * 30 + 10}px`;
+        } else {
+            // Activity bars
+            if (task.status === 'completed') {
+                bar.style.backgroundColor = '#28a745'; // Green
+            } else if (task.status === 'in_progress') {
+                bar.style.backgroundColor = '#ffc107'; // Yellow
+            } else {
+                bar.style.backgroundColor = '#6c757d'; // Gray
+            }
+        }
+
+        barContainer.appendChild(bar);
+        taskRow.appendChild(barContainer);
+        container.appendChild(taskRow);
+    });
+}
+</script>
+
 <a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
 {% endblock %}

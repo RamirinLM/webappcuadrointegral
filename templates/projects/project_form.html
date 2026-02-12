@@ -6,7 +6,12 @@
 <h1>{% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}</h1>
 <form method="post">
     {% csrf_token %}
+    <h2>Datos del Proyecto</h2>
     {{ form.as_p }}
+    {% if acta_form %}
+    <h2>Acta de Constitución</h2>
+    {{ acta_form.as_p }}
+    {% endif %}
     <button type="submit" class="btn btn-primary">Guardar</button>
     <a href="{% url 'project_list' %}" class="btn btn-secondary">Cancelar</a>
 </form>

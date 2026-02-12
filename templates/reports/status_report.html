@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Informe de Estado - {{ project.name }}{% endblock %}
+
+{% block content %}
+<h1>Informe de Estado - {{ project.name }}</h1>
+<p><strong>Progreso:</strong> {{ progress|floatformat:1 }}%</p>
+<p><strong>Actividades Completadas:</strong> {{ completed }} / {{ total }}</p>
+<p><strong>Costo Planificado:</strong> ${{ planned_cost }}</p>
+<p><strong>Costo Actual:</strong> ${{ actual_cost }}</p>
+<p><strong>Diferencia de Costo:</strong> ${{ cost_difference }}</p>
+<p><strong>Días Planificados:</strong> {{ planned_days }}</p>
+<p><strong>Días Actuales:</strong> {{ actual_days }}</p>
+<p><strong>Diferencia de Tiempo:</strong> {{ time_difference }} días</p>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Actividad</th>
+            <th>Estado</th>
+            <th>Progreso</th>
+            <th>Costo Planificado</th>
+            <th>Costo Actual</th>
+            <th>Diferencia Costo</th>
+            <th>Días Planificados</th>
+            <th>Días Actuales</th>
+            <th>Diferencia Tiempo</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for activity in activities %}
+            <tr>
+                <td>{{ activity.name }}</td>
+                <td>{{ activity.status }}</td>
+                <td>{{ activity.progress }}%</td>
+                <td>${{ activity.planned_cost }}</td>
+                <td>${{ activity.actual_cost }}</td>
+                <td>${{ activity.cost_diff }}</td>
+                <td>{{ activity.planned_days }}</td>
+                <td>{{ activity.actual_days }}</td>
+                <td>{{ activity.time_diff }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
+{% endblock %}

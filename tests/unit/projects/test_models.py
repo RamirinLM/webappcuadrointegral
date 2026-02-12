@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from datetime import date
+from datetime import date, timedelta
 from projects.models import (
     Project, Activity, Milestone, Persona, UserProfile, Seguimiento,
     Cronograma, Presupuesto, Alcance, Comunicacion, AutoCertificacion
@@ -121,26 +121,36 @@ class TestSeguimiento(TestCase):
         )
 
     def test_seguimiento_creation_and_save(self):
+        # Create some activities
+        Activity.objects.create(
+            project=self.project,
+            name='Activity 1',
+            description='Desc',
+            start_date=date.today(),
+            end_date=date.today(),
+            status='completed',
+            cost=100.00
+        )
+        Activity.objects.create(
+            project=self.project,
+            name='Activity 2',
+            description='Desc',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=1),
+            status='pending',
+            cost=200.00
+        )
         seguimiento = Seguimiento.objects.create(
             proyecto=self.project,
             fecha=date.today(),
-            perspectiva='financiera',
-            indicador='Test',
-            valor_actual=50.00,
-            valor_objetivo=100.00,
-            descripcion='Desc'
+            observacion='Test observation'
         )
-        self.assertEqual(seguimiento.progreso, 50.00)  # 50/100 * 100
-
-    def test_seguimiento_zero_objetivo(self):
-        seguimiento = Seguimiento.objects.create(
-            proyecto=self.project,
-            fecha=date.today(),
-            perspectiva='financiera',
-            valor_actual=50.00,
-            valor_objetivo=0.00
-        )
-        self.assertEqual(seguimiento.progreso, 0.00)
+        # Check metrics: PV = 100 (only completed), EV = 100, AC = 100, CPI = 1.0, SPI = 1.0
+        self.assertEqual(seguimiento.pv, 100.00)
+        self.assertEqual(seguimiento.ev, 100.00)
+        self.assertEqual(seguimiento.ac, 100.00)
+        self.assertEqual(seguimiento.cpi, 1.00)
+        self.assertEqual(seguimiento.spi, 1.00)
 
 class TestCronograma(TestCase):
     def setUp(self):
