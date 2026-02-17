@@ -1,46 +1,45 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Seguimiento CMI{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>Seguimiento CMI</h1>
-    <a href="{% url 'seguimiento_create' %}" class="btn btn-primary mb-3">Agregar Seguimiento</a>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Proyecto</th>
-                <th>Fecha</th>
-                <th>Observación</th>
-                <th>PV</th>
-                <th>EV</th>
-                <th>AC</th>
-                <th>CPI</th>
-                <th>SPI</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for seguimiento in seguimientos %}
-            <tr>
-                <td>{{ seguimiento.proyecto.name }}</td>
-                <td>{{ seguimiento.fecha }}</td>
-                <td>{{ seguimiento.observacion }}</td>
-                <td>${{ seguimiento.pv }}</td>
-                <td>${{ seguimiento.ev }}</td>
-                <td>${{ seguimiento.ac }}</td>
-                <td>{{ seguimiento.cpi }}</td>
-                <td>{{ seguimiento.spi }}</td>
-                <td>
-                    <a href="{% url 'seguimiento_edit' seguimiento.pk %}" class="btn btn-sm btn-warning">Editar</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="9">No hay seguimientos registrados.</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container my-5 p-5 shadow-lg rounded" style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);">
+    <h1 class="mb-4 fw-bold text-center" style="color:#004c99; text-transform:uppercase;">
+        Seguimiento de Proyectos
+    </h1>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle shadow-sm rounded text-center" style="background-color: white;">
+            <thead style="background-color:#ffd600; color:#000; font-weight:700;">
+                <tr>
+                    <th>Proyecto</th>
+                    <th>Estado Actual</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proyecto in proyectos %}
+                <tr>
+                    <td class="fw-semibold">{{ proyecto.name }}</td>
+                    <td>
+                        <span class="badge bg-info text-dark rounded-pill">
+                            {{ proyecto.get_status_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'seguimiento_create' proyecto.id %}" class="btn btn-sm btn-primary rounded-pill">
+                            ➕ Crear Reporte
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="py-4 text-muted">No hay proyectos registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

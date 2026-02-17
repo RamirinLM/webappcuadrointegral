@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar Recurso{% endblock %}
+
+{% block content %}
+<div class="container my-5 p-4 shadow-lg rounded" style="max-width:600px; background:#fff;">
+    <div class="text-center mb-4">
+        <h2 class="text-danger">¿Eliminar Recurso?</h2>
+        <p>Estás a punto de borrar: <strong>{{ resource.nombre }}</strong></p>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-center gap-3">
+            <button type="submit" class="btn btn-danger rounded-pill px-4">Confirmar Eliminación</button>
+            <a href="{% url 'resources:resource_list' %}" class="btn btn-secondary rounded-pill px-4">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

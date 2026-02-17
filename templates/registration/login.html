@@ -1,12 +1,48 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Iniciar Sesión{% endblock %}
 
 {% block content %}
-<h1>Iniciar Sesión</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Iniciar Sesión</button>
-</form>
+<!-- Encabezado con Logo -->
+<div style="background-color: #ffffff; padding: 20px; text-align: center; 
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+    <img src="{% static 'logo.png' %}" alt="Logo" class="rounded-circle"
+         style="max-width: 657px; width:20%; height:auto; display:block; margin:0 auto;">
+</div>
+
+<!-- Contenedor principal -->
+<div class="container d-flex justify-content-center align-items-center" 
+     style="min-height: 85vh; background: linear-gradient(to right, #00b4d8, #ffe066);">
+    
+    <div class="card shadow-lg p-4 text-center" 
+         style="max-width: 420px; width: 100%; border-radius: 12px;">
+        
+        <h2 class="mb-4" style="color: #0077b6; font-family: 'Georgia', serif;">Iniciar Sesión</h2>
+        
+        <form method="post" class="text-start">
+            {% csrf_token %}
+            
+            <!-- Campo Usuario -->
+            <div class="form-group mb-3">
+                <label for="id_username" style="color:#0077b6; font-weight:bold;">Usuario</label>
+                <input type="text" name="username" id="id_username" 
+                       class="form-control" required>
+            </div>
+
+            <!-- Campo Contraseña -->
+            <div class="form-group mb-4">
+                <label for="id_password" style="color:#0077b6; font-weight:bold;">Contraseña</label>
+                <input type="password" name="password" id="id_password" 
+                       class="form-control" required>
+            </div>
+
+            <!-- Botón -->
+            <button type="submit" class="btn btn-block" 
+                    style="background-color: #ffe066; color: #0077b6; font-weight: bold;">
+                Iniciar Sesión
+            </button>
+        </form>
+    </div>
+</div>
 {% endblock %}

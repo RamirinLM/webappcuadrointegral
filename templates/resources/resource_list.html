@@ -1,30 +1,89 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Recursos{% endblock %}
 
 {% block content %}
-<h1>Recursos</h1>
-<a href="{% url 'resources:resource_create' %}" class="btn btn-primary mb-3">Crear Nuevo Recurso</a>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Proyecto</th>
-            <th>Tipo</th>
-            <th>Cantidad</th>
-            <th>Costo Total</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for resource in resources %}
-            <tr>
-                <td>{{ resource.name }}</td>
-                <td>{{ resource.project.name }}</td>
-                <td>{{ resource.get_type_display }}</td>
-                <td>{{ resource.quantity }}</td>
-                <td>${{ resource.total_cost }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
+
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/resources_logo.png' %}"  
+             alt="Recursos"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        Recursos
+    </h1>
+
+    <div class="text-center mb-4 d-flex justify-content-center gap-3 flex-wrap">
+        <a href="javascript:history.back()" 
+           class="btn fw-bold px-4 shadow-sm rounded-pill" 
+           style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
+           ⬅️ Regresar
+        </a>
+
+        <a href="{% url 'resources:resource_create' %}" 
+           class="btn fw-bold px-4 shadow-sm rounded-pill" 
+           style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
+           ➕ Crear Nuevo Recurso
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle shadow-sm rounded text-center"
+               style="border:1px solid #e0e0e0;">
+            <thead style="background-color:#ffd600; color:#000; font-weight:700; font-size:1rem;">
+                <tr>
+                    <th>Nombre</th>
+                    <th>Proyecto</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Costo Total</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for resource in resources %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">{{ resource.name }}</td>
+                        <td>{{ resource.project.name }}</td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
+                                {{ resource.get_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ resource.quantity }}</td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
+                                ${{ resource.total_cost }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'resources:resource_edit' resource.pk %}"  
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"  
+                               style="background-color:#ffc107; color:#000; border:1px solid #004c99;">
+                                ✏️ Editar
+                            </a>
+                            <a href="{% url 'resources:resource_delete' resource.pk %}"  
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"  
+                               style="background-color:#d32f2f; color:#fff; border:1px solid #b71c1c;">
+                                🗑️ Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-secondary text-center py-3">
+                            No hay recursos registrados aún.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

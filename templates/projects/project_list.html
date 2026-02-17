@@ -1,33 +1,115 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Proyectos{% endblock %}
+{% block title %}Lista de Proyectos{% endblock %}
 
 {% block content %}
-<h1>Proyectos</h1>
-<a href="{% url 'project_create' %}" class="btn btn-primary mb-3">Crear Nuevo Proyecto</a>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Estado</th>
-            <th>Fecha de Inicio</th>
-            <th>Fecha de Fin</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for project in projects %}
-            <tr>
-                <td><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></td>
-                <td>{{ project.get_status_display }}</td>
-                <td>{{ project.start_date }}</td>
-                <td>{{ project.end_date }}</td>
-                <td>
-                    <a href="{% url 'project_edit' project.pk %}" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="{% url 'project_delete' project.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
+
+    <div class="text-center mb-4">
+        <img src="{% static 'logo.png' %}"
+             alt="Logo Proyectos"
+             class="img-fluid rounded shadow-sm"
+             style="max-height:100px; border: 2px solid #004c99;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2.2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase; text-shadow: 1px 1px 2px rgba(0,0,0,0.1);">
+        Gestión de Proyectos
+    </h1>
+
+    <div class="text-center mb-5 d-flex justify-content-center gap-3">
+        <a href="{% url 'project_create' %}"
+           class="btn fw-bold px-5 py-2 shadow rounded-pill btn-hover"
+           style="background-color:#4fc3f7; color:#000; border:2px solid #004c99; transition: 0.3s;">
+           ➕ Crear Nuevo Proyecto
+        </a>
+        <a href="{% url 'seguimiento_list' %}"
+           class="btn fw-bold px-5 py-2 shadow rounded-pill btn-hover"
+           style="background-color:#ffd600; color:#000; border:2px solid #004c99; transition: 0.3s;">
+           📊 Ver Seguimientos
+        </a>
+    </div>
+    
+    <div class="table-responsive shadow-sm rounded">
+        <table class="table table-hover align-middle text-center" style="border:1px solid #dee2e6; background-color: white;">
+            <thead style="background-color:#ffd600; color:#000; font-weight:bold;">
+                <tr>
+                    <th class="py-3">Nombre del Proyecto</th>
+                    <th class="py-3">Estado</th>
+                    <th class="py-3">Progreso</th>
+                    <th class="py-3">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                    <tr>
+                        <td class="fw-bold">
+                            <a href="{% url 'project_detail' project.pk %}" 
+                               class="text-decoration-none" style="color:#01579b;">
+                                {{ project.name }}
+                            </a>
+                        </td>
+                        <td>
+                            {# Colores dinámicos según el estado #}
+                            <span class="badge px-3 py-2 rounded-pill"
+                                  style="{% if project.status == 'completed' %}background-color:#c8e6c9; color:#1b5e20;
+                                         {% elif project.status == 'in_progress' %}background-color:#fff9c4; color:#f57f17;
+                                         {% elif project.status == 'planning' %}background-color:#e1f5fe; color:#01579b;
+                                         {% else %}background-color:#f5f5f5; color:#616161;{% endif %}">
+                                {{ project.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-muted">
+                            {{ project.start_date|date:"d/m/Y" }} - {{ project.end_date|date:"d/m/Y" }}
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{% url 'seguimiento_create' project.id %}" 
+                                   class="btn btn-sm shadow-sm rounded-pill"
+                                   style="background-color:#e3f2fd; color:#01579b; border:1px solid #01579b; font-weight:600;"
+                                   title="Agregar Seguimiento">
+                                   📝 Reportar
+                                </a>
+
+                                <a href="{% url 'project_edit' project.pk %}" 
+                                   class="btn btn-sm shadow-sm rounded-pill"
+                                   style="background-color:#ffd600; color:#000; border:1px solid #004c99; font-weight:600;">
+                                   ✏️ Editar
+                                </a>
+
+                                <a href="{% url 'project_delete' project.pk %}" 
+                                   class="btn btn-sm shadow-sm rounded-pill"
+                                   style="background-color:#ef5350; color:#fff; border:1px solid #b71c1c; font-weight:600;">
+                                   🗑️ Eliminar
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="py-5 text-center text-secondary">
+                            <i class="fas fa-folder-open fa-3x mb-3"></i><br>
+                            No hay proyectos registrados en este momento.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .btn-hover:hover {
+        background-color: #00b0ff !important;
+        transform: scale(1.05);
+    }
+    table tbody tr:hover {
+        background-color: #f1f8ff !important;
+    }
+    .btn-group .btn {
+        margin: 0 2px;
+    }
+</style>
 {% endblock %}

@@ -1,37 +1,120 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Usuarios{% endblock %}
+{% block title %}Gestión de Usuarios{% endblock %}
 
 {% block content %}
-<h1>Usuarios</h1>
-<a href="{% url 'user_create' %}" class="btn btn-primary mb-3">Crear Nuevo Usuario</a>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Nombre de Usuario</th>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Email</th>
-            <th>Rol</th>
-            <th>Activo</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in users %}
-            <tr>
-                <td>{{ user.username }}</td>
-                <td>{{ user.first_name }}</td>
-                <td>{{ user.last_name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.userprofile.get_role_display }}</td>
-                <td>{% if user.is_active %}Sí{% else %}No{% endif %}</td>
-                <td>
-                    <a href="{% url 'user_edit' user.pk %}" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="{% url 'user_delete' user.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<style>
+    .btn-action {
+        min-width: 100px; 
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        filter: brightness(1.1);
+    }
+    .badge-role {
+        background-color: #e1f5fe; 
+        color: #01579b; 
+        border: 1px solid #b3e5fc;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+</style>
+
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
+
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/user_list_logo.png' %}"  
+             alt="Logo Usuarios"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        Gestión de Usuarios
+    </h1>
+
+    <div class="text-center mb-4 d-flex justify-content-center gap-3">
+        <a href="javascript:history.back()" 
+           class="btn fw-bold px-4 shadow-sm rounded-pill" 
+           style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
+            ⬅️ Regresar
+        </a>
+        <a href="{% url 'user_create' %}"
+           class="btn fw-bold px-4 shadow-sm rounded-pill"
+           style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
+            ➕ Crear Nuevo Usuario
+        </a>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="table table-hover align-middle shadow-sm rounded text-center"
+               style="border:1px solid #e0e0e0; background-color: white;">
+            <thead style="background-color:#ffd600; color:#000; font-weight:700; font-size:1rem;">
+                <tr>
+                    <th>Username</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">{{ user.username }}</td>
+                        <td>{{ user.first_name }} {{ user.last_name }}</td>
+                        <td>{{ user.email|default:"---" }}</td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill badge-role">
+                                {% if user.profile %}
+                                    {{ user.profile.get_role_display }}
+                                {% else %}
+                                    <small class="text-muted">Sin Perfil</small>
+                                {% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="badge px-3 py-2 rounded-pill"
+                                      style="background-color:#c8e6c9; color:#2e7d32;">Activo</span>
+                            {% else %}
+                                <span class="badge px-3 py-2 rounded-pill"
+                                      style="background-color:#ffcdd2; color:#c62828;">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex justify-content-center gap-2">
+                                <a href="{% url 'user_edit' user.pk %}"  
+                                   class="btn btn-sm btn-action fw-bold shadow-sm rounded-pill"
+                                   style="background-color:#ffd600; color:#000; border:1px solid #c5a600;">
+                                    ✏️ Editar
+                                </a>
+                                <a href="{% url 'user_delete' user.pk %}"  
+                                   class="btn btn-sm btn-action fw-bold shadow-sm rounded-pill"
+                                   style="background-color:#d32f2f; color:#fff; border:1px solid #b71c1c;">
+                                    🗑️ Borrar
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-secondary text-center py-4">
+                            No hay usuarios registrados aún.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

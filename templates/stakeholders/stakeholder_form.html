@@ -1,13 +1,60 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{% if form.instance.pk %}Editar Interesado{% else %}Crear Interesado{% endif %}{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}Editar Interesado{% else %}Crear Interesado{% endif %}
+{% endblock %}
 
 {% block content %}
-<h1>{% if form.instance.pk %}Editar Interesado{% else %}Crear Interesado{% endif %}</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a href="{% url 'stakeholders:stakeholder_list' %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:700px;">
+
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/stakeholder_logo.png' %}"  
+             alt="Interesado"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:100px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        {% if form.instance.pk %}Editar Interesado{% else %}Crear Interesado{% endif %}
+    </h1>
+
+    <form method="post" class="needs-validation text-start">
+        {% csrf_token %}
+        <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light">
+            {% for field in form %}
+                <div class="row mb-3">
+                    <div class="col-sm-3">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                    </div>
+                    <div class="col-sm-9">
+                        {{ field }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="javascript:history.back()" 
+               class="btn fw-bold px-4 shadow-sm rounded-pill" 
+               style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
+                ⬅️ Regresar
+            </a>
+
+            <button type="submit"  
+                    class="btn fw-bold px-4 shadow-sm rounded-pill"  
+                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
+                Guardar
+            </button>
+
+            <a href="{% url 'stakeholders:stakeholder_list' %}"  
+               class="btn fw-semibold px-4 shadow-sm rounded-pill"  
+               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
 {% endblock %}

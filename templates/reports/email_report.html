@@ -1,17 +1,57 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Informe de Proyecto</title>
-</head>
-<body>
-    <h1>Informe Automático del Proyecto: {{ project.name }}</h1>
-    <p><strong>Descripción:</strong> {{ project.description }}</p>
-    <p><strong>Progreso:</strong> {{ progress|floatformat:1 }}%</p>
-    <p><strong>Actividades Completadas:</strong> {{ completed }} / {{ total }}</p>
-    <p><strong>Fecha de Inicio:</strong> {{ project.start_date }}</p>
-    <p><strong>Fecha de Fin:</strong> {{ project.end_date }}</p>
-    <p><strong>Estado:</strong> {{ project.get_status_display }}</p>
-    <hr>
-    <p>Este es un informe automático generado por el Sistema de Gestión de Proyectos GAD Célica.</p>
-</body>
-</html>
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Informe de Proyecto - {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:900px;">
+
+    <!-- Imagen superior opcional -->
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/project_report_logo.png' %}"  
+             alt="Informe Proyecto"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        Informe Automático del Proyecto: {{ project.name }}
+    </h1>
+
+    <!-- Información general -->
+    <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light">
+        <p><strong>Descripción:</strong> {{ project.description }}</p>
+        <p><strong>Progreso:</strong> 
+            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
+                {{ progress|floatformat:1 }}%
+            </span>
+        </p>
+        <p><strong>Actividades Completadas:</strong> {{ completed }} / {{ total }}</p>
+        <p><strong>Fecha de Inicio:</strong> {{ project.start_date }}</p>
+        <p><strong>Fecha de Fin:</strong> {{ project.end_date }}</p>
+        <p><strong>Estado:</strong> 
+            <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
+                {{ project.get_status_display }}
+            </span>
+        </p>
+    </div>
+
+    <hr class="my-4">
+
+    <p class="text-secondary text-center">
+        Este es un informe automático generado por el 
+        <strong>Sistema de Gestión de Proyectos GAD Célica</strong>.
+    </p>
+
+    <!-- Botón volver -->
+    <div class="text-center mt-4">
+        <a href="{% url 'reports:report_list' %}" 
+           class="btn fw-bold px-4 shadow-sm rounded-pill" 
+           style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+            ⬅️ Volver a Reportes
+        </a>
+    </div>
+</div>
+{% endblock %}

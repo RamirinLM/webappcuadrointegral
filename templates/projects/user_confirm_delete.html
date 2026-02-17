@@ -1,13 +1,44 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Eliminar Usuario{% endblock %}
 
 {% block content %}
-<h1>Eliminar Usuario</h1>
-<p>¿Está seguro de que desea eliminar al usuario "{{ user.username }}"?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Eliminar</button>
-    <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:700px;">
+
+    <!-- Imagen superior opcional -->
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/delete_user.png' %}"  
+             alt="Eliminar Usuario"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:100px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#d32f2f; letter-spacing:1px; text-transform:uppercase;">
+        Eliminar Usuario
+    </h1>
+
+    <p class="fw-semibold text-secondary text-center" style="font-size:1.1rem;">
+        ¿Está seguro de que desea eliminar al usuario  
+        <span class="text-primary fw-bold">"{{ user.username }}"</span>?
+    </p>
+    
+    <form method="post" class="mt-4 text-center">
+        {% csrf_token %}
+        <div class="d-flex justify-content-center gap-3">
+            <button type="submit"  
+                    class="btn fw-bold px-4 shadow-sm rounded-pill"  
+                    style="background-color:#d32f2f; color:#fff; border:2px solid #b71c1c;">
+                🗑️ Eliminar
+            </button>
+            <a href="{% url 'user_list' %}"  
+               class="btn fw-semibold px-4 shadow-sm rounded-pill"  
+               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+                ⬅️ Cancelar
+            </a>
+        </div>
+    </form>
+</div>
 {% endblock %}

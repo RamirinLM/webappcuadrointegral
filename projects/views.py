@@ -195,7 +195,8 @@ def seguimiento_list(request):
 
 @jefe_departamental_required
 @login_required
-def seguimiento_create(request):
+def seguimiento_create(request, project_id):
+    project = get_object_or_404(Project, pk=project_id, created_by=request.user)
     if request.method == 'POST':
         form = SeguimientoForm(request.POST)
         if form.is_valid():
@@ -203,7 +204,7 @@ def seguimiento_create(request):
             messages.success(request, 'Seguimiento creado exitosamente.')
             return redirect('seguimiento_list')
     else:
-        form = SeguimientoForm()
+        form = SeguimientoForm(initial={'proyecto': project})
     return render(request, 'projects/seguimiento_form.html', {'form': form})
 
 @jefe_departamental_required

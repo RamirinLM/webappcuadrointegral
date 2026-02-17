@@ -1,10 +1,26 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Calendario de Proyecto - {{ project.name }}{% endblock %}
 
 {% block content %}
-<link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+<!-- FullCalendar CSS y JS -->
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+
+<!-- Imagen superior opcional -->
+<div class="text-center mb-4">
+    <img src="{% static 'logo.png' %}"
+         alt="Logo Calendario"  
+         class="img-fluid rounded shadow-sm"  
+         style="max-height:120px;">
+</div>
+
+<h1 class="mb-4 fw-bold text-center"
+    style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+    Calendario del Proyecto: {{ project.name }}
+</h1>
+
 <style>
     #calendar {
         max-width: 1100px;
@@ -12,9 +28,8 @@
         padding: 0 10px;
     }
 </style>
-<h1>Calendario del Proyecto: {{ project.name }}</h1>
 
-<div id='calendar'></div>
+<div id="calendar"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -32,5 +47,12 @@
         calendar.render();
     });
 </script>
-<a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
+
+<div class="text-center mt-4">
+    <a href="{% url 'reports:report_list' %}"  
+       class="btn fw-bold px-4 shadow-sm rounded-pill"  
+       style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+        ⬅️ Volver a Reportes
+    </a>
+</div>
 {% endblock %}

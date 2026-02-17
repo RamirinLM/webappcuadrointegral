@@ -1,30 +1,93 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Riesgos{% endblock %}
 
 {% block content %}
-<h1>Riesgos</h1>
-<a href="{% url 'risks:risk_create' %}" class="btn btn-primary mb-3">Crear Nuevo Riesgo</a>
-<table class="table">
-    <thead>
-        <tr>
-            <th>Descripción</th>
-            <th>Proyecto</th>
-            <th>Probabilidad</th>
-            <th>Impacto</th>
-            <th>Estado</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for risk in risks %}
-            <tr>
-                <td>{{ risk.description }}</td>
-                <td>{{ risk.project.name }}</td>
-                <td>{{ risk.get_probability_display }}</td>
-                <td>{{ risk.get_impact_display }}</td>
-                <td>{{ risk.get_status_display }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
+
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/risks_logo.png' %}"  
+             alt="Riesgos"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#d32f2f; letter-spacing:1px; text-transform:uppercase;">
+        Riesgos
+    </h1>
+
+    <div class="text-center mb-4 d-flex justify-content-center gap-3 flex-wrap">
+        <a href="javascript:history.back()" 
+           class="btn fw-bold px-4 shadow-sm rounded-pill" 
+           style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
+           ⬅️ Regresar
+        </a>
+
+        <a href="{% url 'risks:risk_create' %}" 
+           class="btn fw-bold px-4 shadow-sm rounded-pill" 
+           style="background-color:#d32f2f; color:#fff; border:2px solid #b71c1c;">
+           ➕ Crear Nuevo Riesgo
+        </a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle shadow-sm rounded text-center"
+               style="border:1px solid #e0e0e0;">
+            <thead style="background-color:#ffd600; color:#000; font-weight:700; font-size:1rem;">
+                <tr>
+                    <th>Descripción</th>
+                    <th>Proyecto</th>
+                    <th>Probabilidad</th>
+                    <th>Impacto</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for risk in risks %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">{{ risk.description }}</td>
+                        <td>{{ risk.project.name }}</td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
+                                {{ risk.get_probability_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffc107; color:#000;">
+                                {{ risk.get_impact_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill" style="background-color:#6c757d; color:#fff;">
+                                {{ risk.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'risks:risk_edit' risk.pk %}"  
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"  
+                               style="background-color:#ffc107; color:#000; border:1px solid #004c99;">
+                                ✏️ Editar
+                            </a>
+                            <a href="{% url 'risks:risk_delete' risk.pk %}"  
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"  
+                               style="background-color:#d32f2f; color:#fff; border:1px solid #b71c1c;">
+                                🗑️ Eliminar
+                            </a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-secondary text-center py-3">
+                            No hay riesgos registrados aún.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

@@ -1,46 +1,98 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Informe de Estado - {{ project.name }}{% endblock %}
 
 {% block content %}
-<h1>Informe de Estado - {{ project.name }}</h1>
-<p><strong>Progreso:</strong> {{ progress|floatformat:1 }}%</p>
-<p><strong>Actividades Completadas:</strong> {{ completed }} / {{ total }}</p>
-<p><strong>Costo Planificado:</strong> ${{ planned_cost }}</p>
-<p><strong>Costo Actual:</strong> ${{ actual_cost }}</p>
-<p><strong>Diferencia de Costo:</strong> ${{ cost_difference }}</p>
-<p><strong>Días Planificados:</strong> {{ planned_days }}</p>
-<p><strong>Días Actuales:</strong> {{ actual_days }}</p>
-<p><strong>Diferencia de Tiempo:</strong> {{ time_difference }} días</p>
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Actividad</th>
-            <th>Estado</th>
-            <th>Progreso</th>
-            <th>Costo Planificado</th>
-            <th>Costo Actual</th>
-            <th>Diferencia Costo</th>
-            <th>Días Planificados</th>
-            <th>Días Actuales</th>
-            <th>Diferencia Tiempo</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for activity in activities %}
-            <tr>
-                <td>{{ activity.name }}</td>
-                <td>{{ activity.status }}</td>
-                <td>{{ activity.progress }}%</td>
-                <td>${{ activity.planned_cost }}</td>
-                <td>${{ activity.actual_cost }}</td>
-                <td>${{ activity.cost_diff }}</td>
-                <td>{{ activity.planned_days }}</td>
-                <td>{{ activity.actual_days }}</td>
-                <td>{{ activity.time_diff }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:1000px;">
+
+    <!-- Imagen superior opcional -->
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/status_report_logo.png' %}"  
+             alt="Informe de Estado"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        Informe de Estado - {{ project.name }}
+    </h1>
+
+    <!-- Resumen general -->
+    <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light">
+        <p><strong>Progreso:</strong> 
+            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
+                {{ progress|floatformat:1 }}%
+            </span>
+        </p>
+        <p><strong>Actividades Completadas:</strong> 
+            <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
+                {{ completed }} / {{ total }}
+            </span>
+        </p>
+        <p><strong>Costo Planificado:</strong> ${{ planned_cost }}</p>
+        <p><strong>Costo Actual:</strong> ${{ actual_cost }}</p>
+        <p><strong>Diferencia de Costo:</strong> ${{ cost_difference }}</p>
+        <p><strong>Días Planificados:</strong> {{ planned_days }}</p>
+        <p><strong>Días Actuales:</strong> {{ actual_days }}</p>
+        <p><strong>Diferencia de Tiempo:</strong> {{ time_difference }} días</p>
+    </div>
+
+    <!-- Tabla de actividades -->
+    <div class="table-responsive mt-4">
+        <table class="table table-hover align-middle shadow-sm rounded text-center"
+               style="border:1px solid #e0e0e0;">
+            <thead style="background-color:#ffd600; color:#000; font-weight:700; font-size:1rem;">
+                <tr>
+                    <th>Actividad</th>
+                    <th>Estado</th>
+                    <th>Progreso</th>
+                    <th>Costo Planificado</th>
+                    <th>Costo Actual</th>
+                    <th>Diferencia Costo</th>
+                    <th>Días Planificados</th>
+                    <th>Días Actuales</th>
+                    <th>Diferencia Tiempo</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in activities %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">{{ activity.name }}</td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill"
+                                  style="background-color:#4fc3f7; color:#000;">
+                                {{ activity.status }}
+                            </span>
+                        </td>
+                        <td>{{ activity.progress }}%</td>
+                        <td>${{ activity.planned_cost }}</td>
+                        <td>${{ activity.actual_cost }}</td>
+                        <td>${{ activity.cost_diff }}</td>
+                        <td>{{ activity.planned_days }}</td>
+                        <td>{{ activity.actual_days }}</td>
+                        <td>{{ activity.time_diff }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-secondary text-center py-3">
+                            No hay actividades registradas.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Botón volver -->
+    <div class="text-center mt-4">
+        <a href="{% url 'reports:report_list' %}" 
+           class="btn fw-bold px-4 shadow-sm rounded-pill" 
+           style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+            ⬅️ Volver a Reportes
+        </a>
+    </div>
+</div>
 {% endblock %}

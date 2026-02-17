@@ -65,6 +65,11 @@ class SeguimientoForm(forms.ModelForm):
             'fecha': forms.DateInput(attrs={'type': 'date'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if 'proyecto' in self.initial:
+            self.fields['proyecto'].widget = forms.HiddenInput()
+
 class ActaConstitucionForm(forms.ModelForm):
     class Meta:
         model = ActaConstitucion

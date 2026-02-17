@@ -1,21 +1,81 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Reportes{% endblock %}
 
 {% block content %}
-<h1>Reportes</h1>
-<p>Reportes disponibles para proyectos.</p>
-<ul>
-    {% for project in projects %}
-        <li>{{ project.name }} - Estado: {{ project.get_status_display }}
-            <a href="{% url 'reports:gantt_chart' project.id %}" class="btn btn-sm btn-info">Diagrama de Gantt</a>
-            <a href="{% url 'reports:progress_report' project.id %}" class="btn btn-sm btn-success">Informe de Progreso</a>
-            <a href="{% url 'reports:cost_report' project.id %}" class="btn btn-sm btn-warning">Informe de Costos</a>
-            <a href="{% url 'reports:status_report' project.id %}" class="btn btn-sm btn-primary">Informe de Estado</a>
-            <a href="{% url 'reports:calendar_view' project.id %}" class="btn btn-sm btn-secondary">Calendario</a>
-            <a href="{% url 'reports:performance_graphs' project.id %}" class="btn btn-sm btn-dark">Gráficos de Rendimiento</a>
-            <a href="{% url 'reports:export_csv' project.id %}" class="btn btn-sm btn-outline-info">Exportar CSV</a>
-        </li>
-    {% endfor %}
-</ul>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
+
+    <!-- Imagen superior opcional -->
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/reports_logo.png' %}"  
+             alt="Reportes"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        Reportes
+    </h1>
+
+    <p class="text-secondary text-center mb-4">Reportes disponibles para proyectos.</p>
+
+    <!-- Tabla de proyectos con reportes -->
+    <div class="table-responsive">
+        <table class="table table-hover align-middle shadow-sm rounded text-center"
+               style="border:1px solid #e0e0e0;">
+            <thead style="background-color:#ffd600; color:#000; font-weight:700; font-size:1rem;">
+                <tr>
+                    <th>Proyecto</th>
+                    <th>Estado</th>
+                    <th>Reportes Disponibles</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">{{ project.name }}</td>
+                        <td>
+                            <span class="badge px-3 py-2 rounded-pill"
+                                  style="background-color:#4fc3f7; color:#000;">
+                                {{ project.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="d-flex flex-wrap justify-content-center gap-2">
+                            <a href="{% url 'reports:gantt_chart' project.id %}" 
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
+                               style="background-color:#17a2b8; color:#fff;">📊 Gantt</a>
+                            <a href="{% url 'reports:progress_report' project.id %}" 
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
+                               style="background-color:#28a745; color:#fff;">📈 Progreso</a>
+                            <a href="{% url 'reports:cost_report' project.id %}" 
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
+                               style="background-color:#ffc107; color:#000;">💰 Costos</a>
+                            <a href="{% url 'reports:status_report' project.id %}" 
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
+                               style="background-color:#007bff; color:#fff;">📋 Estado</a>
+                            <a href="{% url 'reports:calendar_view' project.id %}" 
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
+                               style="background-color:#6c757d; color:#fff;">📅 Calendario</a>
+                            <a href="{% url 'reports:performance_graphs' project.id %}" 
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
+                               style="background-color:#343a40; color:#fff;">📊 Rendimiento</a>
+                            <a href="{% url 'reports:export_csv' project.id %}" 
+                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
+                               style="background-color:#17a2b8; color:#fff; border:1px solid #004c99;">⬇️ CSV</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-secondary text-center py-3">
+                            No hay proyectos registrados aún.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

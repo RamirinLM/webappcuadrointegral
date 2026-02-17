@@ -1,13 +1,53 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Eliminar Proyecto{% endblock %}
 
 {% block content %}
-<h1>Eliminar Proyecto</h1>
-<p>¿Está seguro de que desea eliminar "{{ project.name }}"?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-danger">Eliminar</button>
-    <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#ffe3e3 0%,#fff 100%);
+            font-family:'Segoe UI','Helvetica Neue',sans-serif;
+            max-width:700px;">
+
+    <!-- Imagen superior -->
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/delete_icon.png' %}"  
+             alt="Eliminar Proyecto"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:100px;">
+    </div>
+
+    <!-- Título -->
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#d32f2f; letter-spacing:1px; text-transform:uppercase;">
+        Eliminar Proyecto
+    </h1>
+
+    <!-- Mensaje de confirmación -->
+    <p class="text-center fs-5 text-secondary mb-4">
+        ¿Estás seguro de que deseas eliminar el proyecto <strong>{{ project.name }}</strong>?  
+        Esta acción no se puede deshacer.
+    </p>
+
+    <!-- Formulario de confirmación -->
+    <form method="post" class="text-center">
+        {% csrf_token %}
+        <button type="submit"
+                class="btn fw-bold px-5 py-2 shadow-sm rounded-pill"
+                style="background-color:#d32f2f; color:#fff; border:2px solid #b71c1c;">
+            🗑️ Sí, eliminar
+        </button>
+        <a href="{% url 'project_list' %}"
+           class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
+           style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+            ❌ Cancelar
+        </a>
+        <!-- Botón de regresar -->
+        <a href="javascript:history.back()"
+           class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
+           style="background-color:#ccc; color:#000; border:2px solid #004c99;">
+            ⬅️ Regresar
+        </a>
+    </form>
+</div>
 {% endblock %}

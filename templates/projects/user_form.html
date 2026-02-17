@@ -1,13 +1,160 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{% if form.instance.pk %}Editar Usuario{% else %}Crear Usuario{% endif %}{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}Editar Usuario{% else %}Nuevo Usuario{% endif %}
+{% endblock %}
 
 {% block content %}
-<h1>{% if form.instance.pk %}Editar Usuario{% else %}Crear Usuario{% endif %}</h1>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container my-5 d-flex justify-content-center">
+    <div class="card shadow-lg border-0 rounded-4" style="max-width: 650px; width: 100%; background: #ffffff;">
+        
+        <div class="card-header border-0 pt-4 text-center" style="background: linear-gradient(135deg, #f5faff 0%, #ffffff 100%); border-radius: 1rem 1rem 0 0;">
+            <h2 class="fw-bold" style="color: #004c99; letter-spacing: 1px;">
+                {% if form.instance.pk %}✏️ EDITAR USUARIO{% else %}👤 NUEVO USUARIO{% endif %}
+            </h2>
+            <p class="text-muted small">Complete todos los campos para gestionar el acceso</p>
+        </div>
+        
+        <div class="card-body px-5 pb-5">
+            <form method="POST" id="userForm">
+                {% csrf_token %}
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold" style="color: #444;">Username</label>
+                        {{ form.username }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold" style="color: #444;">Email</label>
+                        {{ form.email }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold" style="color: #444;">Nombre</label>
+                        {{ form.first_name }}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold" style="color: #444;">Apellido</label>
+                        {{ form.last_name }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold" style="color: #444;">Contraseña</label>
+                    {{ form.password }}
+                    {% if form.instance.pk %}
+                        <div class="form-text text-info">Dejar en blanco para mantener la contraseña actual.</div>
+                    {% endif %}
+                </div>
+
+                <div class="form-check form-switch mb-4 mt-3">
+                    {{ form.is_active }}
+                    <label class="form-check-label fw-bold" for="{{ form.is_active.id_for_label }}">Cuenta de usuario activa</label>
+                </div>
+
+                <hr class="my-4 text-muted">
+
+                <div class="mb-4">
+                    <label class="fw-bold d-block mb-3 text-center" style="color: #004c99; font-size: 1.1rem;">
+                        Asignar Rol de Proyecto
+                    </label>
+                    
+                    {{ form.role }}
+
+                    <div class="d-grid gap-2" id="role-buttons">
+                        <button type="button" class="btn btn-outline-primary btn-role rounded-pill py-2 fw-semibold" data-role="administrador">
+                            Administrador
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-role rounded-pill py-2 fw-semibold" data-role="tecnico">
+                            Técnico de Proyectos
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-role rounded-pill py-2 fw-semibold" data-role="gestor">
+                            Gestor de Proyectos
+                        </button>
+                        <button type="button" class="btn btn-outline-primary btn-role rounded-pill py-2 fw-semibold" data-role="jefe_departamental">
+                            Jefe Departamental
+                        </button>
+                    </div>
+                    {% if form.role.errors %}
+                        <div class="text-danger small mt-2 text-center">{{ form.role.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-5">
+                    <a href="{% url 'user_list' %}" class="btn btn-light px-4 py-2 rounded-pill border fw-bold text-muted">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary px-5 py-2 rounded-pill fw-bold shadow-sm" style="background-color: #004c99; border: none;">
+                        💾 GUARDAR CAMBIOS
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Efectos para los botones de rol */
+    .btn-role {
+        transition: all 0.3s ease;
+        border-width: 2px;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+    .btn-role:hover {
+        transform: translateY(-2px);
+        background-color: #e3f2fd;
+        color: #004c99;
+    }
+    /* Clase que se activa mediante JS */
+    .btn-active {
+        background-color: #004c99 !important;
+        color: white !important;
+        border-color: #004c99 !important;
+        box-shadow: 0 4px 10px rgba(0, 76, 153, 0.3);
+    }
+    /* Estilo para los inputs de Django */
+    input[type="text"], input[type="email"], input[type="password"] {
+        border-radius: 50px !important;
+        padding: 0.6rem 1.2rem !important;
+        border: 1px solid #ced4da !important;
+    }
+    input:focus {
+        border-color: #004c99 !important;
+        box-shadow: 0 0 0 0.25rem rgba(0, 76, 153, 0.1) !important;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleInput = document.querySelector('input[name="role"]');
+    const buttons = document.querySelectorAll('.btn-role');
+
+    function updateUI(selectedRole) {
+        buttons.forEach(btn => {
+            if (btn.dataset.role === selectedRole) {
+                btn.classList.add('btn-active');
+            } else {
+                btn.classList.remove('btn-active');
+            }
+        });
+    }
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const roleValue = this.dataset.role;
+            roleInput.value = roleValue; // Asigna el valor al input hidden
+            updateUI(roleValue); // Cambia el color de los botones
+        });
+
+        // Al cargar la página (Modo Editar), marcar el botón correcto
+        if (roleInput.value === btn.dataset.role) {
+            updateUI(roleInput.value);
+        }
+    });
+});
+</script>
 {% endblock %}

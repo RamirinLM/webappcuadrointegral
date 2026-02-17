@@ -1,41 +1,119 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}{{ project.name }}{% endblock %}
 
 {% block content %}
-<h1>{{ project.name }}</h1>
-<p>{{ project.description }}</p>
-<p><strong>Estado:</strong> {{ project.get_status_display }}</p>
-<p><strong>Fecha de Inicio:</strong> {{ project.start_date }}</p>
-<p><strong>Fecha de Fin:</strong> {{ project.end_date }}</p>
-<p><strong>Presupuesto:</strong> ${{ project.budget }}</p>
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
 
-<h2>Acta de Constitución</h2>
-{% if project.actaconstitucion %}
-    <p><strong>Alcance:</strong> {{ project.actaconstitucion.alcance }}</p>
-    <p><strong>Entregables:</strong> {{ project.actaconstitucion.entregables }}</p>
-    <p><strong>Justificación:</strong> {{ project.actaconstitucion.justificacion }}</p>
-    <p><strong>Objetivos:</strong> {{ project.actaconstitucion.objetivos }}</p>
-    <a href="{% url 'acta_constitucion_edit' project.pk %}" class="btn btn-warning">Editar Acta</a>
-{% else %}
-    <p>No hay acta de constitución registrada.</p>
-    <a href="{% url 'acta_constitucion_create' project.pk %}" class="btn btn-primary">Crear Acta de Constitución</a>
-{% endif %}
+    <!-- Imagen superior opcional -->
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/project_detail_logo.png' %}"  
+             alt="Logo Proyecto"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
 
-<h2>Actividades</h2>
-<ul>
-    {% for activity in activities %}
-        <li>{{ activity.name }} - {{ activity.get_status_display }}</li>
-    {% endfor %}
-</ul>
+    <!-- Título del proyecto -->
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        {{ project.name }}
+    </h1>
 
-<h2>Hitos</h2>
-<ul>
-    {% for milestone in milestones %}
-        <li>{{ milestone.name }} - Vence: {{ milestone.due_date }} {% if milestone.completed %} (Completado) {% endif %}</li>
-    {% endfor %}
-</ul>
+    <!-- Información general -->
+    <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light">
+        <p class="text-secondary">{{ project.description }}</p>
+        <p><strong>Estado:</strong>  
+            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
+                {{ project.get_status_display }}
+            </span>
+        </p>
+        <p><strong>Fecha de Inicio:</strong> {{ project.start_date }}</p>
+        <p><strong>Fecha de Fin:</strong> {{ project.end_date }}</p>
+        <p><strong>Presupuesto:</strong>  
+            <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
+                ${{ project.budget }}
+            </span>
+        </p>
+    </div>
 
-<a href="{% url 'project_edit' project.pk %}" class="btn btn-warning">Editar</a>
-<a href="{% url 'project_delete' project.pk %}" class="btn btn-danger">Eliminar</a>
+    <!-- Acta de Constitución -->
+    <h2 class="text-primary fw-bold">Acta de Constitución</h2>
+    {% if project.actaconstitucion %}
+        <div class="p-3 bg-white rounded shadow-sm mb-3 border border-light">
+            <p><strong>Alcance:</strong> {{ project.actaconstitucion.alcance }}</p>
+            <p><strong>Entregables:</strong> {{ project.actaconstitucion.entregables }}</p>
+            <p><strong>Justificación:</strong> {{ project.actaconstitucion.justificacion }}</p>
+            <p><strong>Objetivos:</strong> {{ project.actaconstitucion.objetivos }}</p>
+        </div>
+        <a href="{% url 'acta_constitucion_edit' project.pk %}"  
+           class="btn fw-bold shadow-sm rounded-pill"  
+           style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+            ✏️ Editar Acta
+        </a>
+    {% else %}
+        <p class="text-secondary">No hay acta de constitución registrada.</p>
+        <a href="{% url 'acta_constitucion_create' project.pk %}"  
+           class="btn fw-bold shadow-sm rounded-pill"  
+           style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
+            ➕ Crear Acta de Constitución
+        </a>
+    {% endif %}
+
+    <hr class="my-4">
+
+    <!-- Actividades -->
+    <h2 class="text-primary fw-bold">Actividades</h2>
+    <ul class="list-group shadow-sm mb-3">
+        {% for activity in activities %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ activity.name }}
+                <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
+                    {{ activity.get_status_display }}
+                </span>
+            </li>
+        {% empty %}
+            <li class="list-group-item text-secondary">No hay actividades registradas.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Hitos -->
+    <h2 class="text-primary fw-bold">Hitos</h2>
+    <ul class="list-group shadow-sm mb-3">
+        {% for milestone in milestones %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                {{ milestone.name }}
+                <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
+                    Vence: {{ milestone.due_date }}
+                </span>
+                {% if milestone.completed %}
+                    <span class="badge px-3 py-2 rounded-pill" style="background-color:#388e3c; color:#fff;">
+                        Completado
+                    </span>
+                {% else %}
+                    <span class="badge px-3 py-2 rounded-pill" style="background-color:#d32f2f; color:#fff;">
+                        Pendiente
+                    </span>
+                {% endif %}
+            </li>
+        {% empty %}
+            <li class="list-group-item text-secondary">No hay hitos registrados.</li>
+        {% endfor %}
+    </ul>
+
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-center gap-3 mt-4">
+        <a href="{% url 'project_edit' project.pk %}"  
+           class="btn fw-bold shadow-sm rounded-pill"  
+           style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+            ✏️ Editar
+        </a>
+        <a href="{% url 'project_delete' project.pk %}"  
+           class="btn fw-bold shadow-sm rounded-pill"  
+           style="background-color:#d32f2f; color:#fff; border:2px solid #b71c1c;">
+            🗑️ Eliminar
+        </a>
+    </div>
+</div>
 {% endblock %}

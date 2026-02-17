@@ -129,7 +129,7 @@ def calendar_view(request, project_id):
 
     return render(request, 'reports/calendar.html', {
         'project': project,
-        'events': json.dumps(events),
+        'events': json.dumps(events) if events else '[]',
     })
 
 @login_required

@@ -35,6 +35,15 @@ def stakeholder_edit(request, pk):
     return render(request, 'stakeholders/stakeholder_form.html', {'form': form})
 
 @login_required
+def stakeholder_delete(request, pk):
+    stakeholder = get_object_or_404(Stakeholder, pk=pk)
+    if request.method == 'POST':
+        stakeholder.delete()
+        messages.success(request, 'Stakeholder deleted successfully.')
+        return redirect('stakeholders:stakeholder_list')
+    return render(request, 'stakeholders/stakeholder_confirm_delete.html', {'stakeholder': stakeholder})
+
+@login_required
 def feedback_list(request):
     feedbacks = Feedback.objects.filter(project__created_by=request.user)
     return render(request, 'stakeholders/feedback_list.html', {'feedbacks': feedbacks})

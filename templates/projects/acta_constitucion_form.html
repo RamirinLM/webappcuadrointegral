@@ -1,30 +1,63 @@
 {% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
 
-{% block title %}{% if form.instance.pk %}Editar Acta de Constitución{% else %}Crear Acta de Constitución{% endif %}{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}Editar Acta de Constitución{% else %}Crear Acta de Constitución{% endif %}
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1>{% if form.instance.pk %}Editar Acta de Constitución{% else %}Crear Acta de Constitución{% endif %} - {{ project.name }}</h1>
-    <form method="post">
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:800px;">
+
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/acta_logo.png' %}"  
+             alt="Logo Acta"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        {% if form.instance.pk %}Editar Acta de Constitución{% else %}Crear Acta de Constitución{% endif %}
+        - {{ project.name }}
+    </h1>
+    
+    <form method="post" class="needs-validation">
         {% csrf_token %}
+        
         <div class="mb-3">
-            <label for="{{ form.alcance.id_for_label }}" class="form-label">Alcance</label>
-            {{ form.alcance }}
+            <label for="{{ form.alcance.id_for_label }}" class="form-label fw-semibold text-secondary">Alcance</label>
+            {{ form.alcance|add_class:"form-control border-info shadow-sm" }}
         </div>
+        
         <div class="mb-3">
-            <label for="{{ form.entregables.id_for_label }}" class="form-label">Entregables</label>
-            {{ form.entregables }}
+            <label for="{{ form.entregables.id_for_label }}" class="form-label fw-semibold text-secondary">Entregables</label>
+            {{ form.entregables|add_class:"form-control border-info shadow-sm" }}
         </div>
+        
         <div class="mb-3">
-            <label for="{{ form.justificacion.id_for_label }}" class="form-label">Justificación</label>
-            {{ form.justificacion }}
+            <label for="{{ form.justificacion.id_for_label }}" class="form-label fw-semibold text-secondary">Justificación</label>
+            {{ form.justificacion|add_class:"form-control border-info shadow-sm" }}
         </div>
+        
         <div class="mb-3">
-            <label for="{{ form.objetivos.id_for_label }}" class="form-label">Objetivos</label>
-            {{ form.objetivos }}
+            <label for="{{ form.objetivos.id_for_label }}" class="form-label fw-semibold text-secondary">Objetivos</label>
+            {{ form.objetivos|add_class:"form-control border-info shadow-sm" }}
         </div>
-        <button type="submit" class="btn btn-primary">Guardar</button>
-        <a href="{% url 'project_detail' project.pk %}" class="btn btn-secondary">Cancelar</a>
+        
+        <div class="d-flex justify-content-center gap-3 mt-4">
+            <button type="submit"  
+                    class="btn fw-bold px-4 shadow-sm rounded-pill"  
+                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
+                Guardar
+            </button>
+            <a href="{% url 'project_detail' project.pk %}"  
+               class="btn fw-semibold px-4 shadow-sm rounded-pill"  
+               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+                Cancelar
+            </a>
+        </div>
     </form>
 </div>
 {% endblock %}

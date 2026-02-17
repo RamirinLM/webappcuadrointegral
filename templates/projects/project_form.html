@@ -1,18 +1,65 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}{% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}{% endblock %}
+{% block title %}
+    {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
+{% endblock %}
 
 {% block content %}
-<h1>{% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}</h1>
-<form method="post">
-    {% csrf_token %}
-    <h2>Datos del Proyecto</h2>
-    {{ form.as_p }}
-    {% if acta_form %}
-    <h2>Acta de Constitución</h2>
-    {{ acta_form.as_p }}
-    {% endif %}
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a href="{% url 'project_list' %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container my-5 p-5 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);
+            font-family:'Segoe UI','Helvetica Neue',sans-serif;
+            max-width:900px;">
+
+    <!-- Logo superior -->
+    <div class="text-center mb-4">
+        <img src="{% static 'projects/images/project_logo.png' %}"  
+             alt="Proyecto"  
+             class="img-fluid rounded shadow-sm"  
+             style="max-height:120px;">
+    </div>
+
+    <!-- Título -->
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2.2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
+    </h1>
+
+    <!-- Formulario -->
+    <form method="post" class="needs-validation text-start">
+        {% csrf_token %}
+        <div class="p-4 bg-white rounded shadow-sm mb-4 border border-light">
+            {% for field in form %}
+                <div class="row mb-3">
+                    <div class="col-sm-3">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                    </div>
+                    <div class="col-sm-9">
+                        {{ field }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Botones -->
+        <div class="d-flex justify-content-center gap-4 mt-4">
+            <button type="submit"  
+                    class="btn fw-bold px-5 py-2 shadow-sm rounded-pill"
+                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
+                Guardar
+            </button>
+            <a href="{% url 'project_list' %}"  
+               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
+               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+                Cancelar
+            </a>
+            <!-- Botón de regresar -->
+            <a href="javascript:history.back()"  
+               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
+               style="background-color:#ccc; color:#000; border:2px solid #004c99;">
+                ⬅️ Regresar
+            </a>
+        </div>
+    </form>
+</div>
 {% endblock %}

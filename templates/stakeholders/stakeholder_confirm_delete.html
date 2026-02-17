@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirmar Eliminación{% endblock %}
+
+{% block content %}
+<div class="container my-5 p-4 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#fff5f5 0%,#fff 100%); font-family:'Segoe UI',sans-serif; max-width:600px;">
+
+    <div class="text-center mb-4">
+        <span style="font-size: 5rem;">⚠️</span>
+        <h2 class="fw-bold mt-2" style="color:#b71c1c; text-transform:uppercase;">¿Confirmar Eliminación?</h2>
+        <hr style="border: 1px solid #ffcdd2; width: 50%; margin: auto;">
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body bg-white rounded border-start border-danger border-4 text-center">
+            <p class="mb-1 text-secondary">Estás a punto de eliminar permanentemente a:</p>
+            <h4 class="fw-bold text-dark">{{ stakeholder.nombre }}</h4>
+            <span class="badge rounded-pill bg-light text-dark border">{{ stakeholder.organizacion }}</span>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex justify-content-center gap-3">
+            <button type="submit" 
+                    class="btn fw-bold px-4 shadow-sm rounded-pill" 
+                    style="background-color:#d32f2f; color:#fff; border:2px solid #b71c1c;">
+                🗑️ Sí, Eliminar
+            </button>
+
+            <a href="{% url 'stakeholders:stakeholder_list' %}" 
+               class="btn fw-bold px-4 shadow-sm rounded-pill" 
+               style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
+                Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
