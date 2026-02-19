@@ -116,12 +116,12 @@ class TestSeguimiento(TestCase):
             name='Test Project',
             description='Desc',
             start_date=date.today(),
-            end_date=date.today(),
+            end_date=date.today() + timedelta(days=10),  # Extend project end date
             created_by=self.user
         )
 
     def test_seguimiento_creation_and_save(self):
-        # Create some activities
+        # Create some activities within project date range
         Activity.objects.create(
             project=self.project,
             name='Activity 1',

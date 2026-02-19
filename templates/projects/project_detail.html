@@ -4,115 +4,288 @@
 {% block title %}{{ project.name }}{% endblock %}
 
 {% block content %}
+<style>
+    .traffic-light {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .traffic-green { background-color: #28a745; }
+    .traffic-yellow { background-color: #ffc107; }
+    .traffic-red { background-color: #dc3545; }
+    .traffic-gray { background-color: #6c757d; }
+    .progress-mini {
+        height: 10px;
+        border-radius: 5px;
+    }
+    .phase-badge {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+</style>
+
 <div class="container my-5 p-4 shadow-lg rounded"
      style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
 
-    <!-- Imagen superior opcional -->
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/project_detail_logo.png' %}"  
-             alt="Logo Proyecto"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:120px;">
+    <!-- Header con estado semáforo -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold mb-1" style="font-size:2rem; color:#004c99;">
+                {{ project.name }}
+            </h1>
+            <div class="d-flex align-items-center gap-2">
+                <span class="traffic-light traffic-{{ traffic_light }}"></span>
+                <span class="text-muted">
+                    {% if traffic_light == 'green' %}
+                        En tiempo y presupuesto
+                    {% elif traffic_light == 'yellow' %}
+                        Atención requerida
+                    {% elif traffic_light == 'red' %}
+                        Crítico
+                    {% else %}
+                        Sin datos suficientes
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+        <div class="text-end">
+            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
+                {{ project.get_status_display }}
+            </span>
+        </div>
     </div>
 
-    <!-- Título del proyecto -->
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        {{ project.name }}
-    </h1>
+    <!-- Indicadores rápidos -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <small class="text-muted">Progreso</small>
+                <h4 class="mb-0 text-primary">{{ progress }}%</h4>
+                <div class="progress progress-mini mt-2">
+                    <div class="progress-bar bg-success" style="width: {{ progress }}%;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <small class="text-muted">Presupuesto</small>
+                <h4 class="mb-0 text-info">${{ project.budget|floatformat:0|default:"N/A" }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <small class="text-muted">Costo Real</small>
+                <h4 class="mb-0 {% if budget_variance and budget_variance < 0 %}text-danger{% else %}text-success{% endif %}">${{ total_cost|floatformat:2 }}</h4>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center p-3">
+                <small class="text-muted">Variación</small>
+                <h4 class="mb-0 {% if budget_variance and budget_variance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                    {% if budget_variance %}
+                        {% if budget_variance >= 0 %}+{% endif %}${{ budget_variance|floatformat:2 }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </h4>
+            </div>
+        </div>
+    </div>
 
     <!-- Información general -->
     <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light">
         <p class="text-secondary">{{ project.description }}</p>
-        <p><strong>Estado:</strong>  
-            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
-                {{ project.get_status_display }}
-            </span>
-        </p>
-        <p><strong>Fecha de Inicio:</strong> {{ project.start_date }}</p>
-        <p><strong>Fecha de Fin:</strong> {{ project.end_date }}</p>
-        <p><strong>Presupuesto:</strong>  
-            <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
-                ${{ project.budget }}
-            </span>
-        </p>
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>📅 Fecha de Inicio:</strong> {{ project.start_date|date:"d/m/Y" }}</p>
+                <p><strong>📅 Fecha de Fin:</strong> {{ project.end_date|date:"d/m/Y" }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>💰 Presupuesto:</strong> ${{ project.budget|floatformat:2|default:"No definido" }}</p>
+                <p><strong>📊 Utilización:</strong> {{ utilization|floatformat:1 }}%</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="d-flex gap-2 mb-4 flex-wrap">
+        <a href="{% url 'project_financial_summary' project.pk %}" class="btn btn-outline-info rounded-pill">
+            💰 Resumen Financiero
+        </a>
+        <a href="{% url 'reports:gantt_chart' project.pk %}" class="btn btn-outline-primary rounded-pill">
+            📊 Ver Gantt
+        </a>
+        <a href="{% url 'seguimiento_create' project.pk %}" class="btn btn-outline-success rounded-pill">
+            📝 Nuevo Seguimiento
+        </a>
     </div>
 
     <!-- Acta de Constitución -->
-    <h2 class="text-primary fw-bold">Acta de Constitución</h2>
-    {% if project.actaconstitucion %}
-        <div class="p-3 bg-white rounded shadow-sm mb-3 border border-light">
-            <p><strong>Alcance:</strong> {{ project.actaconstitucion.alcance }}</p>
-            <p><strong>Entregables:</strong> {{ project.actaconstitucion.entregables }}</p>
-            <p><strong>Justificación:</strong> {{ project.actaconstitucion.justificacion }}</p>
-            <p><strong>Objetivos:</strong> {{ project.actaconstitucion.objetivos }}</p>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📋 Acta de Constitución</h5>
         </div>
-        <a href="{% url 'acta_constitucion_edit' project.pk %}"  
-           class="btn fw-bold shadow-sm rounded-pill"  
-           style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-            ✏️ Editar Acta
-        </a>
-    {% else %}
-        <p class="text-secondary">No hay acta de constitución registrada.</p>
-        <a href="{% url 'acta_constitucion_create' project.pk %}"  
-           class="btn fw-bold shadow-sm rounded-pill"  
-           style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-            ➕ Crear Acta de Constitución
-        </a>
-    {% endif %}
-
-    <hr class="my-4">
+        <div class="card-body">
+            {% if project.actaconstitucion %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Alcance:</strong> {{ project.actaconstitucion.alcance|truncatewords:20 }}</p>
+                        <p><strong>Entregables:</strong> {{ project.actaconstitucion.entregables|truncatewords:15 }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Justificación:</strong> {{ project.actaconstitucion.justificacion|truncatewords:15 }}</p>
+                        <p><strong>Objetivos:</strong> {{ project.actaconstitucion.objetivos|truncatewords:15 }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'acta_constitucion_edit' project.pk %}" class="btn btn-sm btn-warning rounded-pill">
+                    ✏️ Editar Acta
+                </a>
+            {% else %}
+                <p class="text-secondary mb-2">No hay acta de constitución registrada.</p>
+                <a href="{% url 'acta_constitucion_create' project.pk %}" class="btn btn-sm btn-info rounded-pill">
+                    ➕ Crear Acta de Constitución
+                </a>
+            {% endif %}
+        </div>
+    </div>
 
     <!-- Actividades -->
-    <h2 class="text-primary fw-bold">Actividades</h2>
-    <ul class="list-group shadow-sm mb-3">
-        {% for activity in activities %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ activity.name }}
-                <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
-                    {{ activity.get_status_display }}
-                </span>
-            </li>
-        {% empty %}
-            <li class="list-group-item text-secondary">No hay actividades registradas.</li>
-        {% endfor %}
-    </ul>
+    <div class="card mb-4">
+        <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">📌 Actividades ({{ activities.count }})</h5>
+            <a href="{% url 'activity_create' %}" class="btn btn-sm btn-light rounded-pill">➕ Nueva</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Estado</th>
+                            <th>Fechas</th>
+                            <th>Costo</th>
+                            <th>Predecesora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity in activities %}
+                            <tr>
+                                <td>
+                                    <strong>{{ activity.name }}</strong>
+                                    {% if activity.assigned_to %}
+                                        <br><small class="text-muted">👤 {{ activity.assigned_to.get_full_name|default:activity.assigned_to.username }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if activity.status == 'completed' %}
+                                        <span class="badge bg-success">Completada</span>
+                                    {% elif activity.status == 'in_progress' %}
+                                        <span class="badge bg-warning text-dark">En Progreso</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ activity.start_date|date:"d/m" }} - {{ activity.end_date|date:"d/m/Y" }}</small>
+                                </td>
+                                <td>${{ activity.cost|default:0|floatformat:2 }}</td>
+                                <td>
+                                    {% if activity.predecessor %}
+                                        <span class="badge bg-info text-dark">{{ activity.predecessor.name|truncatechars:15 }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">No hay actividades registradas.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- Hitos -->
-    <h2 class="text-primary fw-bold">Hitos</h2>
-    <ul class="list-group shadow-sm mb-3">
-        {% for milestone in milestones %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ milestone.name }}
-                <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
-                    Vence: {{ milestone.due_date }}
-                </span>
-                {% if milestone.completed %}
-                    <span class="badge px-3 py-2 rounded-pill" style="background-color:#388e3c; color:#fff;">
-                        Completado
-                    </span>
-                {% else %}
-                    <span class="badge px-3 py-2 rounded-pill" style="background-color:#d32f2f; color:#fff;">
-                        Pendiente
-                    </span>
-                {% endif %}
-            </li>
-        {% empty %}
-            <li class="list-group-item text-secondary">No hay hitos registrados.</li>
-        {% endfor %}
-    </ul>
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">🎯 Hitos ({{ milestones.count }})</h5>
+            <a href="{% url 'milestone_create' %}" class="btn btn-sm btn-light rounded-pill">➕ Nuevo</a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Fase</th>
+                            <th>Fecha Límite</th>
+                            <th>Estado</th>
+                            <th>Progreso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for milestone in milestones %}
+                            <tr>
+                                <td>
+                                    <strong>{{ milestone.name }}</strong>
+                                    {% if milestone.is_phase_gate %}
+                                        <span class="badge bg-danger ms-1">Cierre de Fase</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="phase-badge bg-light text-dark border">{{ milestone.get_phase_display }}</span>
+                                </td>
+                                <td>{{ milestone.due_date|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if milestone.completed %}
+                                        <span class="badge bg-success">✓ Completado</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% with progress=milestone.get_progress_percentage %}
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="progress progress-mini" style="width: 60px;">
+                                                <div class="progress-bar" style="width: {{ progress }}%;"></div>
+                                            </div>
+                                            <small>{{ progress }}%</small>
+                                        </div>
+                                    {% endwith %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">No hay hitos registrados.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <!-- Botones de acción -->
     <div class="d-flex justify-content-center gap-3 mt-4">
         <a href="{% url 'project_edit' project.pk %}"  
            class="btn fw-bold shadow-sm rounded-pill"  
            style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-            ✏️ Editar
+            ✏️ Editar Proyecto
         </a>
         <a href="{% url 'project_delete' project.pk %}"  
            class="btn fw-bold shadow-sm rounded-pill"  
            style="background-color:#d32f2f; color:#fff; border:2px solid #b71c1c;">
             🗑️ Eliminar
+        </a>
+        <a href="{% url 'dashboard' %}"  
+           class="btn fw-bold shadow-sm rounded-pill"  
+           style="background-color:#6c757d; color:#fff; border:2px solid #495057;">
+            🏠 Volver al Dashboard
         </a>
     </div>
 </div>

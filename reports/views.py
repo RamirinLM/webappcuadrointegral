@@ -114,18 +114,23 @@ def calendar_view(request, project_id):
 
     events = []
     for activity in activities:
-        events.append({
-            'title': f'Actividad: {activity.name}',
-            'start': activity.start_date.isoformat() if activity.start_date else None,
-            'end': activity.end_date.isoformat() if activity.end_date else None,
-            'backgroundColor': 'blue',
-        })
+        # Only add events with valid start dates
+        if activity.start_date:
+            events.append({
+                'title': f'Actividad: {activity.name}',
+                'start': activity.start_date.isoformat(),
+                'end': activity.end_date.isoformat() if activity.end_date else None,
+                'backgroundColor': '#007bff',
+                'borderColor': '#0056b3',
+            })
     for milestone in milestones:
-        events.append({
-            'title': f'Hito: {milestone.name}',
-            'start': milestone.due_date.isoformat(),
-            'backgroundColor': 'red',
-        })
+        if milestone.due_date:
+            events.append({
+                'title': f'Hito: {milestone.name}',
+                'start': milestone.due_date.isoformat(),
+                'backgroundColor': '#dc3545',
+                'borderColor': '#a71d2a',
+            })
 
     return render(request, 'reports/calendar.html', {
         'project': project,

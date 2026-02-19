@@ -257,16 +257,108 @@ class Project(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def total_activities_cost(self):
+        """Suma de costos de todas las actividades del proyecto"""
+        from django.db.models import Sum
+        result = self.activity_set.aggregate(total=Sum('cost'))
+        return result['total'] or 0
+
+    @property
+    def total_resources_cost(self):
+        """Suma de costos de todos los recursos del proyecto"""
+        from django.db.models import Sum, F, DecimalField
+        from resources.models import Resource
+        result = Resource.objects.filter(
+            activity__project=self
+        ).aggregate(
+            total=Sum(F('quantity') * F('cost_per_unit'), output_field=DecimalField())
+        )
+        return result['total'] or 0
+
+    @property
+    def total_actual_cost(self):
+        """Costo real total del proyecto (actividades + recursos)"""
+        return self.total_activities_cost + self.total_resources_cost
+
+    @property
+    def budget_variance(self):
+        """Diferencia entre presupuesto y costo real (positivo = bajo presupuesto)"""
+        if self.budget:
+            return self.budget - self.total_actual_cost
+        return None
+
+    @property
+    def budget_utilization_percentage(self):
+        """Porcentaje de utilización del presupuesto"""
+        if self.budget and self.budget > 0:
+            return round((self.total_actual_cost / self.budget) * 100, 1)
+        return 0
+
+    def get_traffic_light_status(self):
+        """
+        Calcula el estado del semáforo CMI basado en SPI y CPI.
+        Verde: SPI >= 0.95 y CPI >= 0.95
+        Amarillo: SPI >= 0.85 y CPI >= 0.85
+        Rojo: Cualquier otro caso
+        """
+        try:
+            latest_seguimiento = self.seguimiento_set.first()
+            if not latest_seguimiento:
+                return 'gray'  # Sin datos
+            
+            spi = latest_seguimiento.spi or 0
+            cpi = latest_seguimiento.cpi or 0
+            
+            if spi >= 0.95 and cpi >= 0.95:
+                return 'green'
+            elif spi >= 0.85 and cpi >= 0.85:
+                return 'yellow'
+            else:
+                return 'red'
+        except:
+            return 'gray'
+
+    def get_progress_percentage(self):
+        """Calcula el porcentaje de avance del proyecto basado en actividades completadas"""
+        total = self.activity_set.count()
+        if total == 0:
+            return 0
+        completed = self.activity_set.filter(status='completed').count()
+        return round((completed / total) * 100, 1)
+
     class Meta:
         verbose_name = 'Proyecto'
         verbose_name_plural = 'Proyectos'
 
 class Milestone(models.Model):
+    PHASE_CHOICES = [
+        ('initiation', 'Inicio'),
+        ('planning', 'Planificación'),
+        ('execution', 'Ejecución'),
+        ('monitoring', 'Monitoreo y Control'),
+        ('closure', 'Cierre'),
+    ]
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name='Proyecto')
     name = models.CharField(max_length=200, verbose_name='Nombre')
     description = models.TextField(verbose_name='Descripción')
     due_date = models.DateField(verbose_name='Fecha Límite')
     completed = models.BooleanField(default=False, verbose_name='Completado')
+    phase = models.CharField(max_length=20, choices=PHASE_CHOICES, default='execution', verbose_name='Fase')
+    is_phase_gate = models.BooleanField(default=False, verbose_name='Es Cierre de Fase', help_text="Marca el final de una fase del proyecto")
+    activities = models.ManyToManyField('Activity', blank=True, verbose_name='Actividades Asociadas')
+
+    def check_completion(self):
+        """Verifica si todas las actividades asociadas están completas"""
+        return not self.activities.filter(status__in=['pending', 'in_progress']).exists()
+
+    def get_progress_percentage(self):
+        """Calcula el porcentaje de avance basado en actividades asociadas"""
+        total = self.activities.count()
+        if total == 0:
+            return 0
+        completed = self.activities.filter(status='completed').count()
+        return round((completed / total) * 100, 1)
 
     def __str__(self):
         return f"{self.name} - {self.project.name}"
@@ -290,16 +382,84 @@ class Activity(models.Model):
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Asignado A')
     cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Costo')
     time_estimate = models.PositiveIntegerField(help_text="Horas estimadas", null=True, blank=True, verbose_name='Estimación de Tiempo')
+    predecessor = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Actividad Predecesora',
+        related_name='successors',
+        help_text="Actividad que debe completarse antes de iniciar esta"
+    )
+
+    def clean(self):
+        """
+        Validaciones de negocio para la actividad:
+        1. Fechas dentro del rango del proyecto
+        2. Fecha de inicio anterior a fecha de fin
+        3. Costo dentro del presupuesto disponible
+        4. Sin ciclos de dependencia
+        """
+        from django.core.exceptions import ValidationError
+        from django.db.models import Sum
+        errors = {}
+
+        # Validación 1: Fechas dentro del rango del proyecto
+        if self.start_date and self.project and self.project.start_date:
+            if self.start_date < self.project.start_date:
+                errors['start_date'] = f'La fecha de inicio no puede ser anterior al inicio del proyecto ({self.project.start_date.strftime("%d/%m/%Y")})'
+
+        if self.end_date and self.project and self.project.end_date:
+            if self.end_date > self.project.end_date:
+                errors['end_date'] = f'La fecha de fin no puede ser posterior al fin del proyecto ({self.project.end_date.strftime("%d/%m/%Y")})'
+
+        # Validación 2: Fecha inicio < Fecha fin
+        if self.start_date and self.end_date:
+            if self.start_date > self.end_date:
+                errors['start_date'] = 'La fecha de inicio no puede ser posterior a la fecha de fin'
+
+        # Validación 3: Costo dentro del presupuesto disponible
+        if self.cost and self.project and self.project.budget:
+            total_activities_cost = Activity.objects.filter(
+                project=self.project
+            ).exclude(pk=self.pk).aggregate(
+                total=Sum('cost')
+            )['total'] or 0
+
+            if total_activities_cost + self.cost > self.project.budget:
+                disponible = self.project.budget - total_activities_cost
+                errors['cost'] = f'Costo excede el presupuesto disponible. Presupuesto total: ${self.project.budget:,.2f}, Disponible: ${disponible:,.2f}'
+
+        # Validación 4: Sin ciclos de dependencia
+        if self.predecessor:
+            visited = set()
+            current = self.predecessor
+            while current:
+                if current.pk == self.pk:
+                    errors['predecessor'] = 'No se pueden crear ciclos de dependencia. Esta actividad no puede ser predecesora de sí misma.'
+                    break
+                if current.pk in visited:
+                    break
+                visited.add(current.pk)
+                current = current.predecessor
+
+        if errors:
+            raise ValidationError(errors)
 
     def save(self, *args, **kwargs):
+        # Ejecutar validaciones antes de guardar
+        self.full_clean()
         super().save(*args, **kwargs)
-        if self.cost and self.cost > 10000:  # Example threshold
+        
+        # Notificaciones de costo elevado
+        if self.cost and self.cost > 10000:
             Notification.objects.create(
                 project=self.project,
                 alert_type='cost',
                 message=f'Costo de actividad elevado: {self.name} - ${self.cost}'
             )
-        # Check for schedule deviation
+        
+        # Notificaciones de desviación de cronograma
         from datetime import date
         today = date.today()
         if self.end_date and self.end_date < today and self.status != 'completed':
@@ -315,3 +475,29 @@ class Activity(models.Model):
     class Meta:
         verbose_name = 'Actividad'
         verbose_name_plural = 'Actividades'
+
+
+class ActivityAssignment(models.Model):
+    """
+    Modelo para asignar múltiples responsables a una actividad.
+    Permite la gestión de recursos humanos por actividad.
+    """
+    ROLE_CHOICES = [
+        ('responsable', 'Responsable Principal'),
+        ('colaborador', 'Colaborador'),
+        ('revisor', 'Revisor'),
+        ('aprobador', 'Aprobador'),
+    ]
+    activity = models.ForeignKey(Activity, on_delete=models.CASCADE, verbose_name='Actividad', related_name='assignments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Responsable')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='colaborador', verbose_name='Rol en la Actividad')
+    hours_assigned = models.PositiveIntegerField(default=0, verbose_name='Horas Asignadas')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Fecha de Asignación')
+
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.activity.name} ({self.get_role_display()})"
+
+    class Meta:
+        verbose_name = 'Asignación de Actividad'
+        verbose_name_plural = 'Asignaciones de Actividades'
+        unique_together = ['activity', 'user']

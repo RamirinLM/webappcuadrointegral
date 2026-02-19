@@ -2,43 +2,109 @@
 {% load static %}
 
 {% block title %}
-    {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
+    {% if form.instance.pk %}Editar Hito{% else %}Crear Hito{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="container my-5 p-5 shadow-lg rounded"
      style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);
             font-family:'Segoe UI','Helvetica Neue',sans-serif;
-            max-width:900px;">
-
-    <!-- Logo superior -->
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/project_logo.png' %}"  
-             alt="Proyecto"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:120px;">
-    </div>
+            max-width:800px;">
 
     <!-- Título -->
     <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2.2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        🎯 {% if form.instance.pk %}Editar Hito{% else %}Crear Hito{% endif %}
     </h1>
 
     <!-- Formulario -->
     <form method="post" class="needs-validation text-start">
         {% csrf_token %}
         <div class="p-4 bg-white rounded shadow-sm mb-4 border border-light">
-            {% for field in form %}
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
-                    </div>
-                    <div class="col-sm-9">
-                        {{ field }}
+            <!-- Información básica -->
+            <h5 class="mb-3 text-primary border-bottom pb-2">Información Básica</h5>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label for="{{ form.name.id_for_label }}" class="form-label fw-bold">{{ form.name.label }}</label>
+                </div>
+                <div class="col-sm-9">
+                    {{ form.name }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label for="{{ form.project.id_for_label }}" class="form-label fw-bold">{{ form.project.label }}</label>
+                </div>
+                <div class="col-sm-9">
+                    {{ form.project }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label fw-bold">{{ form.description.label }}</label>
+                </div>
+                <div class="col-sm-9">
+                    {{ form.description }}
+                </div>
+            </div>
+            
+            <!-- Fechas y Estado -->
+            <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">Fechas y Estado</h5>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label for="{{ form.due_date.id_for_label }}" class="form-label fw-bold">{{ form.due_date.label }}</label>
+                </div>
+                <div class="col-sm-9">
+                    {{ form.due_date }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label class="form-label fw-bold">Estado</label>
+                </div>
+                <div class="col-sm-9">
+                    <div class="form-check">
+                        {{ form.completed }}
+                        <label class="form-check-label" for="{{ form.completed.id_for_label }}">{{ form.completed.label }}</label>
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+            
+            <!-- Fase del Proyecto -->
+            <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">Fase del Proyecto</h5>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label for="{{ form.phase.id_for_label }}" class="form-label fw-bold">{{ form.phase.label }}</label>
+                </div>
+                <div class="col-sm-9">
+                    {{ form.phase }}
+                    <small class="text-muted d-block mt-1">Indica a qué fase del proyecto pertenece este hito.</small>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label class="form-label fw-bold">Cierre de Fase</label>
+                </div>
+                <div class="col-sm-9">
+                    <div class="form-check">
+                        {{ form.is_phase_gate }}
+                        <label class="form-check-label" for="{{ form.is_phase_gate.id_for_label }}">{{ form.is_phase_gate.label }}</label>
+                    </div>
+                    <small class="text-muted d-block mt-1">Marca el cierre de una fase. Requiere que todas las actividades asociadas estén completas.</small>
+                </div>
+            </div>
+            
+            <!-- Actividades Asociadas -->
+            <h5 class="mb-3 mt-4 text-primary border-bottom pb-2">Actividades Asociadas</h5>
+            <div class="row mb-3">
+                <div class="col-sm-3">
+                    <label for="{{ form.activities.id_for_label }}" class="form-label fw-bold">{{ form.activities.label }}</label>
+                </div>
+                <div class="col-sm-9">
+                    {{ form.activities }}
+                    <small class="text-muted d-block mt-1">Seleccione las actividades que deben completarse para alcanzar este hito (mantenga Ctrl para seleccionar múltiples).</small>
+                </div>
+            </div>
         </div>
 
         <!-- Botones -->
@@ -48,7 +114,7 @@
                     style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
                 💾 Guardar
             </button>
-            <a href="{% url 'project_list' %}"  
+            <a href="{% url 'milestone_list' %}"  
                class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
                style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
                 ❌ Cancelar

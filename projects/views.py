@@ -2,9 +2,10 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.db.models import Sum
 from functools import wraps
-from .models import Project, Activity, Milestone, Seguimiento, ChangeRequest, ActaConstitucion
-from .forms import ProjectForm, ActivityForm, MilestoneForm, UserForm, SeguimientoForm, ActaConstitucionForm
+from .models import Project, Activity, Milestone, Seguimiento, ChangeRequest, ActaConstitucion, ActivityAssignment
+from .forms import ProjectForm, ActivityForm, MilestoneForm, UserForm, SeguimientoForm, ActaConstitucionForm, ActivityAssignmentForm
 
 def jefe_departamental_required(view_func):
     @wraps(view_func)
@@ -22,8 +23,20 @@ def dashboard(request):
     pending_tasks = Activity.objects.filter(project__created_by=request.user, status='pending')
     latest_reports = Seguimiento.objects.filter(proyecto__created_by=request.user).order_by('-fecha')[:5]
     user_role = request.user.userprofile.get_role_display() if hasattr(request.user, 'userprofile') else 'Sin rol'
+    
+    # Add traffic light status and progress to each project
+    projects_with_status = []
+    for project in projects:
+        projects_with_status.append({
+            'project': project,
+            'traffic_light': project.get_traffic_light_status(),
+            'progress': project.get_progress_percentage(),
+            'budget_utilization': project.budget_utilization_percentage,
+        })
+    
     return render(request, 'projects/dashboard.html', {
         'projects': projects,
+        'projects_with_status': projects_with_status,
         'active_projects': active_projects,
         'pending_tasks': pending_tasks,
         'latest_reports': latest_reports,
@@ -40,10 +53,25 @@ def project_detail(request, pk):
     project = get_object_or_404(Project, pk=pk, created_by=request.user)
     activities = project.activity_set.all()
     milestones = project.milestone_set.all()
+    
+    # Calculate financial summary
+    total_activities_cost = project.total_activities_cost
+    total_resources_cost = project.total_resources_cost
+    total_cost = project.total_actual_cost
+    budget_variance = project.budget_variance
+    budget_utilization = project.budget_utilization_percentage
+    
     return render(request, 'projects/project_detail.html', {
         'project': project,
         'activities': activities,
-        'milestones': milestones
+        'milestones': milestones,
+        'total_activities_cost': total_activities_cost,
+        'total_resources_cost': total_resources_cost,
+        'total_cost': total_cost,
+        'budget_variance': budget_variance,
+        'budget_utilization': budget_utilization,
+        'traffic_light': project.get_traffic_light_status(),
+        'progress': project.get_progress_percentage(),
     })
 
 @login_required
@@ -97,7 +125,7 @@ def project_delete(request, pk):
 
 @login_required
 def activity_list(request):
-    activities = Activity.objects.filter(project__created_by=request.user)
+    activities = Activity.objects.filter(project__created_by=request.user).select_related('project', 'predecessor')
     return render(request, 'projects/activity_list.html', {'activities': activities})
 
 @jefe_departamental_required
@@ -106,9 +134,16 @@ def activity_create(request):
     if request.method == 'POST':
         form = ActivityForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Activity created successfully.')
-            return redirect('activity_list')
+            try:
+                activity = form.save()
+                messages.success(request, 'Actividad creada exitosamente.')
+                return redirect('activity_list')
+            except Exception as e:
+                messages.error(request, f'Error al crear la actividad: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = ActivityForm()
     return render(request, 'projects/activity_form.html', {'form': form})
@@ -120,12 +155,19 @@ def activity_edit(request, pk):
     if request.method == 'POST':
         form = ActivityForm(request.POST, instance=activity)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Activity updated successfully.')
-            return redirect('activity_list')
+            try:
+                form.save()
+                messages.success(request, 'Actividad actualizada exitosamente.')
+                return redirect('activity_list')
+            except Exception as e:
+                messages.error(request, f'Error al actualizar: {str(e)}')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
     else:
         form = ActivityForm(instance=activity)
-    return render(request, 'projects/activity_form.html', {'form': form})
+    return render(request, 'projects/activity_form.html', {'form': form, 'activity': activity})
 
 @login_required
 def milestone_list(request):
@@ -305,4 +347,64 @@ def acta_constitucion_edit(request, project_id):
     else:
         form = ActaConstitucionForm(instance=acta)
     return render(request, 'projects/acta_constitucion_form.html', {'form': form, 'project': project})
+
+@login_required
+def project_financial_summary(request, pk):
+    """Vista de resumen financiero del proyecto"""
+    project = get_object_or_404(Project, pk=pk, created_by=request.user)
+    
+    # Get activities with their resource costs
+    activities = project.activity_set.all()
+    
+    context = {
+        'project': project,
+        'budget': project.budget,
+        'activities_cost': project.total_activities_cost,
+        'resources_cost': project.total_resources_cost,
+        'total_cost': project.total_actual_cost,
+        'variance': project.budget_variance,
+        'utilization': project.budget_utilization_percentage,
+        'activities': activities,
+        'traffic_light': project.get_traffic_light_status(),
+    }
+    return render(request, 'projects/financial_summary.html', context)
+
+@login_required
+def activity_assign_user(request, pk):
+    """Asignar múltiples usuarios a una actividad"""
+    activity = get_object_or_404(Activity, pk=pk, project__created_by=request.user)
+    
+    if request.method == 'POST':
+        form = ActivityAssignmentForm(request.POST)
+        if form.is_valid():
+            assignment = form.save(commit=False)
+            assignment.activity = activity
+            assignment.save()
+            messages.success(request, f'Usuario asignado exitosamente a {activity.name}.')
+            return redirect('activity_list')
+    else:
+        form = ActivityAssignmentForm()
+    
+    existing_assignments = activity.assignments.all()
+    
+    return render(request, 'projects/activity_assignment_form.html', {
+        'form': form,
+        'activity': activity,
+        'existing_assignments': existing_assignments
+    })
+
+@jefe_departamental_required
+@login_required
+def milestone_edit(request, pk):
+    """Editar hito existente"""
+    milestone = get_object_or_404(Milestone, pk=pk, project__created_by=request.user)
+    if request.method == 'POST':
+        form = MilestoneForm(request.POST, instance=milestone)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Hito actualizado exitosamente.')
+            return redirect('milestone_list')
+    else:
+        form = MilestoneForm(instance=milestone)
+    return render(request, 'projects/milestone_form.html', {'form': form, 'milestone': milestone})
 

@@ -2,7 +2,8 @@
 {% load static %}
 
 {% block content %}
-<script src="https://code.highcharts.com/highcharts-gantt.js"></script>
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/gantt.js"></script>
 <script src="https://code.highcharts.com/modules/exporting.js"></script>
 
 <div class="container-fluid my-5 px-4">
@@ -10,32 +11,62 @@
         <div class="p-4 text-white" style="background: linear-gradient(135deg, #004c99 0%, #007bff 100%);">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="fw-bold mb-1">Diagrama de Gantt</h2>
-                    <p class="mb-0 opacity-75">Cronograma detallado del proyecto: <strong>{{ proyecto.name }}</strong></p>
+                    <h2 class="fw-bold mb-1">📊 Diagrama de Gantt</h2>
+                    <p class="mb-0 opacity-75">Cronograma detallado del proyecto: <strong>{{ project.name }}</strong></p>
                 </div>
-                <a href="{% url 'reports:report_list' %}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">
-                    <i class="fas fa-arrow-left me-2"></i>Volver
-                </a>
+                <div>
+                    <a href="{% url 'project_financial_summary' project.pk %}" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold me-2">
+                        💰 Resumen Financiero
+                    </a>
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">
+                        ⬅️ Volver al Proyecto
+                    </a>
+                </div>
             </div>
         </div>
 
         <div class="card-body p-0">
-            <div id="container" style="width:100%; height: 500px;"></div>
+            <div id="container" style="width:100%; height: 600px;"></div>
         </div>
 
         <div class="card-footer bg-white py-3 border-0">
             <div class="row text-center">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <small class="text-muted d-block">Estado del Proyecto</small>
-                    <span class="badge bg-info text-dark rounded-pill">{{ proyecto.get_status_display }}</span>
+                    <span class="badge bg-info text-dark rounded-pill">{{ project.get_status_display }}</span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <small class="text-muted d-block">Total Actividades</small>
-                    <span class="fw-bold">{{ actividades.count }}</span>
+                    <span class="fw-bold">{{ activities.count }}</span>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Progreso</small>
+                    <span class="fw-bold">{{ project.get_progress_percentage }}%</span>
+                </div>
+                <div class="col-md-3">
                     <small class="text-muted d-block">Exportar</small>
-                    <button onclick="window.print()" class="btn btn-link btn-sm text-decoration-none text-primary">Imprimir Reporte</button>
+                    <button onclick="window.print()" class="btn btn-link btn-sm text-decoration-none text-primary">🖨️ Imprimir Reporte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Legend -->
+    <div class="card mt-4 shadow-sm">
+        <div class="card-body">
+            <h6 class="mb-3">Leyenda de Estados</h6>
+            <div class="row">
+                <div class="col-md-3">
+                    <span class="badge bg-secondary">Pendiente</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="badge bg-warning text-dark">En Progreso</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="badge bg-success">Completada</span>
+                </div>
+                <div class="col-md-3">
+                    <span class="text-muted">→ Dependencia</span>
                 </div>
             </div>
         </div>
@@ -43,9 +74,9 @@
 </div>
 
 <script>
-    // Configuración de Highcharts Gantt
+    // Configuración de Highcharts Gantt con dependencias
     Highcharts.ganttChart('container', {
-        title: { text: null }, // Quitamos título interno para usar el del card
+        title: { text: null },
         chart: {
             style: { fontFamily: "'Segoe UI', Roboto, sans-serif" }
         },
@@ -53,45 +84,87 @@
             gantt: {
                 borderRadius: 4,
                 borderWidth: 0,
-                grouping: true,
-                dataLabels: { enabled: true, style: { fontWeight: 'normal', textOutline: 'none' } }
+                grouping: false,
+                dataLabels: { 
+                    enabled: true, 
+                    style: { fontWeight: 'normal', textOutline: 'none' },
+                    format: '{point.name}'
+                }
             }
         },
         xAxis: [{
             gridLineWidth: 1,
-            labels: { style: { color: '#666' } }
+            labels: { style: { color: '#666' } },
+            currentDateIndicator: {
+                enabled: true,
+                color: '#dc3545',
+                width: 2,
+                label: {
+                    format: '%e %b'
+                }
+            }
         }],
         yAxis: {
             labels: {
                 style: { fontWeight: 'bold', fontSize: '13px', color: '#333' }
+            },
+            grid: {
+                enabled: true
             }
         },
         tooltip: {
-            pointFormat: '<span>Inicio: {point.start:%e %b %Y}</span><br/><span>Fin: {point.end:%e %b %Y}</span>'
+            pointFormat: '<span style="font-weight:bold">{point.name}</span><br/>' +
+                         '<span>Inicio: {point.start:%e %b %Y}</span><br/>' +
+                         '<span>Fin: {point.end:%e %b %Y}</span><br/>' +
+                         '<span>Estado: {point.status}</span>'
         },
         series: [{
-            name: '{{ proyecto.name }}',
+            name: '{{ project.name|escapejs }}',
             data: [
-                {% if actividades %}
-                    {% for actividad in actividades %}
+                {% if activities %}
+                    {% for activity in activities %}
+                    {% if activity.start_date and activity.end_date %}
                     {
-                        name: '{{ actividad.name }}',
-                        id: 'act_{{ actividad.id }}',
-                        start: Date.UTC({{ actividad.start_date.year }}, {{ actividad.start_date.month|add:-1 }}, {{ actividad.start_date.day }}),
-                        end: Date.UTC({{ actividad.end_date.year }}, {{ actividad.end_date.month|add:-1 }}, {{ actividad.end_date.day }}),
-                        color: '#007bff', // Color moderno
-                        {% if forloop.first %}current: true{% endif %}
+                        name: '{{ activity.name|escapejs }}',
+                        id: 'act_{{ activity.id }}',
+                        start: Date.UTC({{ activity.start_date.year }}, {{ activity.start_date.month|add:-1 }}, {{ activity.start_date.day }}),
+                        end: Date.UTC({{ activity.end_date.year }}, {{ activity.end_date.month|add:-1 }}, {{ activity.end_date.day }}),
+                        {% if activity.status == 'completed' %}
+                        color: '#28a745',
+                        status: 'Completada',
+                        {% elif activity.status == 'in_progress' %}
+                        color: '#ffc107',
+                        status: 'En Progreso',
+                        {% else %}
+                        color: '#6c757d',
+                        status: 'Pendiente',
+                        {% endif %}
+                        {% if activity.predecessor %}
+                        parent: 'act_{{ activity.predecessor.id }}',
+                        dependency: 'act_{{ activity.predecessor.id }}',
+                        {% endif %}
                     }{% if not forloop.last %},{% endif %}
+                    {% endif %}
                     {% endfor %}
                 {% endif %}
             ]
         }],
-        credits: { enabled: false }, // Quitamos la marca de agua
-        exporting: { enabled: true } // Permite descargar como imagen
+        credits: { enabled: false },
+        exporting: { 
+            enabled: true,
+            buttons: {
+                contextButton: {
+                    menuItems: ['downloadPNG', 'downloadPDF', 'downloadSVG']
+                }
+            }
+        }
     });
 </script>
 
 <style>
+    @media print {
+        .card-footer, .btn { display: none !important; }
+    }
     body { background-color: #f8f9fa; }
     .card { transition: transform 0.2s; }
 </style>

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Asignar Responsable - {{ activity.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-5 p-5 shadow-lg rounded"
+     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);
+            font-family:'Segoe UI','Helvetica Neue',sans-serif;
+            max-width:700px;">
+
+    <h1 class="mb-4 fw-bold text-center"
+        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
+        👥 Asignar Responsable
+    </h1>
+    
+    <div class="text-center mb-4">
+        <span class="badge bg-info fs-6">{{ activity.name }}</span>
+        <p class="text-muted mt-2">{{ activity.project.name }}</p>
+    </div>
+
+    <!-- Existing Assignments -->
+    {% if existing_assignments %}
+    <div class="mb-4 p-3 bg-white rounded shadow-sm">
+        <h5 class="mb-3">Responsables Actuales</h5>
+        <ul class="list-group list-group-flush">
+            {% for assignment in existing_assignments %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ assignment.user.get_full_name|default:assignment.user.username }}</strong>
+                    <br><small class="text-muted">{{ assignment.get_role_display }}</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-secondary">{{ assignment.hours_assigned }}h</span>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Form -->
+    <form method="post" class="needs-validation text-start">
+        {% csrf_token %}
+        <div class="p-4 bg-white rounded shadow-sm mb-4 border border-light">
+            {% for field in form %}
+            <div class="row mb-3">
+                <div class="col-sm-4">
+                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+                </div>
+                <div class="col-sm-8">
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Buttons -->
+        <div class="d-flex justify-content-center gap-4 mt-4 flex-wrap">
+            <button type="submit"  
+                    class="btn fw-bold px-5 py-2 shadow-sm rounded-pill"
+                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
+                💾 Asignar
+            </button>
+            <a href="{% url 'activity_list' %}"  
+               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
+               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
+                ❌ Cancelar
+            </a>
+            <a href="javascript:history.back()"  
+               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
+               style="background-color:#ccc; color:#000; border:2px solid #004c99;">
+                ⬅️ Regresar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
