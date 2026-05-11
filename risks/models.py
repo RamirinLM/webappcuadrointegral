@@ -31,6 +31,7 @@ class Risk(models.Model):
         if self.probability == 'high' or self.impact == 'high':
             Notification.objects.create(
                 project=self.project,
+                recipient=self.project.created_by,
                 alert_type='risk',
                 message=f'Riesgo de alto impacto identificado: {self.description}'
             )

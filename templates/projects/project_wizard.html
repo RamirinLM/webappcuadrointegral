@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if edit_mode %}Editar{% else %}Crear{% endif %} proyecto - paso {{ step }}{% endblock %}
+{% block page_heading %}{% if edit_mode %}Editar{% else %}Crear{% endif %} proyecto guiado{% endblock %}
+{% block page_summary %}Asistente paso a paso para completar la informacion del proyecto y sus elementos relacionados.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .wizard-shell {
+        max-width: 1100px;
+        margin: 0 auto;
+    }
+
+    .wizard-progress {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .wizard-step {
+        border: 1px solid rgba(23, 50, 59, 0.08);
+        border-radius: 1rem;
+        background: #fff;
+        padding: 0.9rem 0.75rem;
+        text-align: center;
+    }
+
+    .wizard-step.is-active {
+        border-color: #005f73;
+        box-shadow: 0 0 0 0.2rem rgba(0, 95, 115, 0.12);
+    }
+
+    .wizard-step.is-complete {
+        background: #eef8f1;
+        border-color: #7bc47f;
+    }
+
+    .wizard-step-number {
+        display: inline-flex;
+        width: 2rem;
+        height: 2rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: #e9eff2;
+        color: #17323b;
+        font-weight: 700;
+        margin-bottom: 0.45rem;
+    }
+
+    .wizard-step.is-active .wizard-step-number {
+        background: #005f73;
+        color: #fff;
+    }
+
+    .wizard-step.is-complete .wizard-step-number {
+        background: #2e7d32;
+        color: #fff;
+    }
+
+    .wizard-step-label {
+        font-size: 0.82rem;
+        color: #55707b;
+        line-height: 1.25;
+    }
+
+    .wizard-body .card,
+    .wizard-body .alert,
+    .wizard-body .dynamic-list,
+    .wizard-body .dynamic-item,
+    .wizard-body .stakeholder-card {
+        border-radius: 1rem;
+    }
+
+    .wizard-body .card {
+        border: 1px solid rgba(23, 50, 59, 0.08);
+        box-shadow: none;
+    }
+
+    .wizard-body .card-header {
+        border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+    }
+
+    .wizard-body .form-label {
+        font-weight: 600;
+    }
+
+    .wizard-body .dynamic-item {
+        background: #fff;
+        border: 1px solid rgba(23, 50, 59, 0.08);
+        padding: 0.9rem 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .wizard-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(23, 50, 59, 0.08);
+    }
+
+    .wizard-summary {
+        text-align: center;
+        color: #55707b;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wizard-shell">
+    <div class="wizard-progress" aria-label="Progreso del asistente">
+        {% for step_name in step_names %}
+        <div class="wizard-step {% if forloop.counter < step %}is-complete{% elif forloop.counter == step %}is-active{% endif %}">
+            <div class="wizard-step-number">{{ forloop.counter }}</div>
+            <div class="wizard-step-label">{{ step_name }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <section class="page-card wizard-body">
+        <div class="page-toolbar mb-3">
+            <div>
+                <h2 class="section-title mb-1">{{ title|default:"Completa la informacion" }}</h2>
+                <p class="text-muted mb-0">{{ description|default:"Registra la informacion requerida para continuar." }}</p>
+            </div>
+            <span class="status-chip">Paso {{ step }} de {{ total_steps }}</span>
+        </div>
+
+        <form method="post" id="wizard-form" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            {% if step == 1 %}{% include 'projects/wizard/_step1_project.html' %}{% endif %}
+            {% if step == 2 %}{% include 'projects/wizard/_step2_acta.html' %}{% endif %}
+            {% if step == 3 %}{% include 'projects/wizard/_step3_stakeholders.html' %}{% endif %}
+            {% if step == 4 %}{% include 'projects/wizard/_step4_alcance.html' %}{% endif %}
+            {% if step == 5 %}{% include 'projects/wizard/_step5_risks.html' %}{% endif %}
+            {% if step == 6 %}{% include 'projects/wizard/_step6_activities.html' %}{% endif %}
+            {% if step == 7 %}{% include 'projects/wizard/_step7_milestones.html' %}{% endif %}
+
+            <div class="wizard-nav">
+                <div class="page-actions">
+                    {% if step > 1 %}
+                    <a href="{% url 'wizard_step' step=step|add:-1 %}" class="btn btn-outline-secondary">Anterior</a>
+                    {% else %}
+                    <a href="{% url 'project_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                    {% endif %}
+                </div>
+                <div class="page-actions">
+                    {% if step < total_steps %}
+                    <button type="submit" class="btn btn-primary">Guardar y continuar</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary">Finalizar proyecto</button>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </section>
+
+    <div class="wizard-summary">
+        <small>{{ progress_percentage }}% completado</small>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class ProjectWizard {
+    constructor() {
+        this.initValidation();
+    }
+
+    initValidation() {
+        document.querySelectorAll('.needs-validation').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            });
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    window.wizard = new ProjectWizard();
+});
+</script>
+{% endblock %}

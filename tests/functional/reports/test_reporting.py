@@ -37,4 +37,6 @@ class ReportingTestCase(TestCase):
         )
         response = self.client.get(reverse('reports:gantt_chart', args=[self.project.pk]))
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Gantt')  # Assuming template has this
+        self.assertContains(response, 'Diagrama de Gantt')
+        self.assertContains(response, 'Activity 1')
+        self.assertContains(response, 'gantt-pro')

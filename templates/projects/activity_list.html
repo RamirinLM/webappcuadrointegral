@@ -1,82 +1,95 @@
 {% extends 'base.html' %}
-{% load static %}
 
 {% block title %}Actividades{% endblock %}
+{% block page_heading %}Actividades{% endblock %}
+{% block page_summary %}Gestiona las actividades del proyecto con fechas, costos, estado de ejecucion y variacion.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-4 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif;">
-
-    <!-- Imagen superior opcional -->
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/activity_list_logo.png' %}"  
-             alt="Logo Actividades"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:120px;">
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Listado de actividades</h2>
+            <p class="text-muted mb-0">Cada actividad mantiene planificacion, ejecucion real y variacion calculada.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
+            <a href="{% url 'activity_create' %}" class="btn btn-primary">Nueva actividad</a>
+        </div>
     </div>
 
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        Actividades
-    </h1>
-
-    <!-- Botón crear nueva actividad -->
-    <div class="text-center mb-4">
-        <a href="{% url 'activity_create' %}"
-           class="btn fw-bold px-4 shadow-sm rounded-pill"
-           style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-            ➕ Crear Nueva Actividad
-        </a>
-    </div>
-
-    <!-- Tabla de actividades -->
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm rounded text-center"
-               style="border:1px solid #e0e0e0;">
-            <thead style="background-color:#ffd600; color:#000; font-weight:700; font-size:1rem;">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Proyecto</th>
-                    <th>Estado</th>
-                    <th>Asignado A</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for activity in activities %}
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
                     <tr>
-                        <td class="fw-semibold text-secondary">{{ activity.name }}</td>
-                        <td>{{ activity.project.name }}</td>
+                        <th>Nombre</th>
+                        <th>Proyecto</th>
+                        <th>Estado</th>
+                        <th>Planificacion</th>
+                        <th>Ejecucion real</th>
+                        <th>Costo planif.</th>
+                        <th>Costo real</th>
+                        <th>Var.</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in activities %}
+                    <tr>
                         <td>
-                            {% if activity.get_status_display == "Completada" %}
-                                <span class="badge px-3 py-2 rounded-pill"
-                                      style="background-color:#388e3c; color:#fff;">{{ activity.get_status_display }}</span>
-                            {% elif activity.get_status_display == "En Progreso" %}
-                                <span class="badge px-3 py-2 rounded-pill"
-                                      style="background-color:#ffd600; color:#000;">{{ activity.get_status_display }}</span>
+                            <strong>{{ activity.name }}</strong>
+                        </td>
+                        <td>{{ activity.project.name }}</td>
+                        <td><span class="status-chip">{{ activity.get_status_display }}</span></td>
+                        <td class="small">{{ activity.start_date|date:"d/m/Y" }} - {{ activity.end_date|date:"d/m/Y" }}</td>
+                        <td class="small">
+                            {% if activity.actual_start_date or activity.actual_end_date %}
+                                {{ activity.actual_start_date|date:"d/m/Y"|default:"-" }} - {{ activity.actual_end_date|date:"d/m/Y"|default:"-" }}
                             {% else %}
-                                <span class="badge px-3 py-2 rounded-pill"
-                                      style="background-color:#90a4ae; color:#fff;">{{ activity.get_status_display }}</span>
+                                <span class="text-muted">—</span>
                             {% endif %}
                         </td>
-                        <td>{{ activity.assigned_to.username|default:"No asignado" }}</td>
+                        <td>${{ activity.cost|default:0|floatformat:2 }}</td>
                         <td>
-                            <a href="{% url 'activity_edit' activity.pk %}"
-                               class="btn btn-sm fw-bold shadow-sm rounded-pill"
-                               style="background-color:#4fc3f7; color:#000; border:1px solid #004c99;">
-                                ✏️ Editar
-                            </a>
+                            {% if activity.actual_cost is not None %}
+                                ${{ activity.actual_cost|floatformat:2 }}
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% with sv=activity.schedule_variance_days cv=activity.cost_variance %}
+                                {% if sv is not None and sv != 0 %}
+                                    <span class="small {% if sv < 0 %}text-danger{% else %}text-success{% endif %} fw-bold">
+                                        {{ sv }}d
+                                    </span>
+                                {% endif %}
+                                {% if cv is not None and cv != 0 %}
+                                    <br><span class="small {% if cv < 0 %}text-danger{% else %}text-success{% endif %} fw-bold">
+                                        ${{ cv|floatformat:0 }}
+                                    </span>
+                                {% endif %}
+                                {% if sv == 0 and cv == 0 %}
+                                    <span class="small text-muted">En linea</span>
+                                {% endif %}
+                                {% if sv is None and cv is None %}
+                                    <span class="small text-muted">—</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-nowrap">
+                            <a href="{% url 'activity_edit' activity.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                            <a href="{% url 'activity_assign_user' activity.pk %}" class="btn btn-sm btn-outline-secondary">Asignar</a>
                         </td>
                     </tr>
-                {% empty %}
+                    {% empty %}
                     <tr>
-                        <td colspan="5" class="text-secondary text-center py-3">
-                            No hay actividades registradas aún.
-                        </td>
+                        <td colspan="9" class="empty-state">No hay actividades registradas.</td>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+</section>
 {% endblock %}

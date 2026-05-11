@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Pagina no encontrada{% endblock %}
+{% block page_heading %}Pagina no encontrada{% endblock %}
+{% block page_summary %}La ruta solicitada no existe o ya no esta disponible.{% endblock %}
+
+{% block content %}
+<section class="content-card p-4 p-lg-5 text-center">
+    <h2 class="h3 mb-3">No pudimos encontrar la pagina solicitada.</h2>
+    <p class="text-muted mb-4">Revisa la direccion, vuelve al tablero o entra al modulo principal desde la navegacion.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a class="btn btn-primary" href="{% url 'dashboard' %}">Ir al tablero</a>
+        <a class="btn btn-outline-secondary" href="{% url 'reports:report_list' %}">Ir a reportes</a>
+    </div>
+</section>
+{% endblock %}

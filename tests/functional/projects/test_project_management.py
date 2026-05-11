@@ -14,13 +14,20 @@ class ProjectManagementTestCase(TestCase):
         self.client.login(username='testuser', password='testpass')
 
     def test_project_creation_success(self):
+        # Project creation requires both ProjectForm and ActaConstitucionForm
         response = self.client.post(reverse('project_create'), {
+            # ProjectForm fields
             'name': 'Test Project',
             'description': 'A test project',
             'start_date': '2023-01-01',
             'end_date': '2023-12-31',
             'status': 'planning',
-            'budget': '10000.00'
+            'budget': '10000.00',
+            # ActaConstitucionForm fields
+            'alcance': 'Project scope definition',
+            'entregables': 'Deliverables list',
+            'justificacion': 'Project justification',
+            'objetivos': 'Project objectives'
         })
         self.assertEqual(response.status_code, 302)  # Redirect after success
         self.assertTrue(Project.objects.filter(name='Test Project').exists())
@@ -94,18 +101,27 @@ class ProjectManagementTestCase(TestCase):
             'name': 'Test Milestone',
             'description': 'Milestone desc',
             'due_date': '2023-06-01',
+            'phase': 'execution',
+            'is_phase_gate': False,
             'completed': False
         })
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Milestone.objects.filter(name='Test Milestone').exists())
 
     def test_user_creation(self):
+        # User creation requires jefe_departamental role
+        # Update the user to have jefe_departamental role
+        self.user.userprofile.role = 'jefe_departamental'
+        self.user.userprofile.save()
+        # Re-login with updated permissions
+        self.client.login(username='testuser', password='testpass')
+        
         response = self.client.post(reverse('user_create'), {
             'username': 'newuser',
             'first_name': 'New',
             'last_name': 'User',
             'email': 'new@example.com',
-            'password': 'newpass',
+            'password': 'newpass123',
             'role': 'tecnico_proyectos',
             'is_active': True
         })
@@ -120,17 +136,13 @@ class ProjectManagementTestCase(TestCase):
             end_date=date(2023, 12, 31),
             created_by=self.user
         )
-        response = self.client.post(reverse('seguimiento_create'), {
+        response = self.client.post(reverse('seguimiento_create', args=[project.pk]), {
             'proyecto': project.pk,
             'fecha': '2023-01-15',
-            'perspectiva': 'financiera',
-            'indicador': 'Budget spent',
-            'valor_actual': '2000.00',
-            'valor_objetivo': '10000.00',
-            'descripcion': 'Test seguimiento'
+            'observacion': 'Test seguimiento observation'
         })
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(Seguimiento.objects.filter(indicador='Budget spent').exists())
+        self.assertTrue(Seguimiento.objects.filter(observacion='Test seguimiento observation').exists())
 
     def test_project_delete(self):
         project = Project.objects.create(

@@ -1,62 +1,65 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}
-    {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
-{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar recurso{% else %}Crear recurso{% endif %}{% endblock %}
+{% block page_heading %}{% if form.instance.pk %}Editar recurso{% else %}Crear recurso{% endif %}{% endblock %}
+{% block page_summary %}Asocia el recurso a una actividad valida y registra cantidad, costo y descripcion.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-4 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:800px;">
-
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/project_logo.png' %}"  
-             alt="Proyecto"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:120px;">
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Registro de recurso</h2>
+            <p class="text-muted mb-0">Define el recurso, su actividad asociada y el costo unitario para los reportes financieros.</p>
+        </div>
+        <span class="status-chip">{% if form.instance.pk %}Edicion{% else %}Nuevo recurso{% endif %}</span>
     </div>
 
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
-    </h1>
-
-    <form method="post" class="needs-validation text-start">
+    <form method="post" novalidate>
         {% csrf_token %}
-        <div class="p-4 bg-white rounded shadow-sm mb-4 border border-light">
-            {% for field in form %}
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
-                    </div>
-                    <div class="col-sm-9">
-                        {{ field }}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="form-section">
+                    <h3 class="section-title">Datos del recurso</h3>
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'description' or field.name == 'activity' %}col-12{% else %}col-md-6{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+
+            <div class="col-lg-4">
+                <div class="form-section h-100">
+                    <h3 class="section-title">Recomendaciones</h3>
+                    <ul class="small mb-0 ps-3">
+                        <li>Selecciona primero la actividad correcta para mantener el costo ligado al proyecto.</li>
+                        <li>Usa una cantidad y costo unitario consistentes con el presupuesto aprobado.</li>
+                        <li>Describe el recurso para facilitar auditoria y seguimiento.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-            
-            <a href="javascript:history.back()" 
-               class="btn fw-bold px-4 shadow-sm rounded-pill" 
-               style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
-               ⬅️ Regresar
-            </a>
-
-            <button type="submit"  
-                    class="btn fw-bold px-4 shadow-sm rounded-pill"  
-                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-                ✅ Guardar
-            </button>
-
-            <a href="{% url 'project_list' %}"  
-               class="btn fw-semibold px-4 shadow-sm rounded-pill"  
-               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-                ✖️ Cancelar
-            </a>
-            
+        <div class="page-actions justify-content-end mt-4">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
+            <a href="{% url 'resources:resource_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar recurso</button>
         </div>
     </form>
-</div>
+</section>
 {% endblock %}

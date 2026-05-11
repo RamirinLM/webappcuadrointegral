@@ -71,11 +71,12 @@ class StakeholderManagementTestCase(TestCase):
         self.assertEqual(stakeholder.role, 'manager')
 
     def test_stakeholder_list_view(self):
-        Stakeholder.objects.create(
+        stakeholder = Stakeholder.objects.create(
             name='Stakeholder 1',
             email='s1@example.com',
             role='client'
         )
+        stakeholder.projects.add(self.project)
         response = self.client.get(reverse('stakeholders:stakeholder_list'))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Stakeholder 1')

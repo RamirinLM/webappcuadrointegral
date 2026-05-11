@@ -3,20 +3,9 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from datetime import date, timedelta
 from projects.models import (
-    Project, Activity, Milestone, Persona, UserProfile, Seguimiento,
+    Project, Activity, Milestone, UserProfile, Seguimiento,
     Cronograma, Presupuesto, Alcance, Comunicacion, AutoCertificacion
 )
-
-class TestPersona(TestCase):
-    def test_persona_creation(self):
-        persona = Persona.objects.create(
-            nombre='John',
-            apellido='Doe',
-            email='john@example.com',
-            telefono='123456789'
-        )
-        self.assertEqual(str(persona), 'John Doe')
-        self.assertEqual(persona.email, 'john@example.com')
 
 class TestUserProfile(TestCase):
     def setUp(self):

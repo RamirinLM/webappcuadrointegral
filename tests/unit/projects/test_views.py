@@ -1,6 +1,8 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.db.utils import OperationalError
+from unittest.mock import patch
 from datetime import date
 from projects.models import Project, Activity, Milestone, UserProfile, Seguimiento
 
@@ -50,7 +52,12 @@ class TestProjectViews(TestCase):
             'start_date': date.today().isoformat(),
             'end_date': date.today().isoformat(),
             'status': 'planning',
-            'budget': '1000.00'
+            'budget': '1000.00',
+            # ActaConstitucionForm fields
+            'alcance': 'Project scope',
+            'entregables': 'Deliverables',
+            'justificacion': 'Justification',
+            'objetivos': 'Objectives'
         }
         response = self.client.post(reverse('project_create'), data)
         self.assertRedirects(response, reverse('project_detail', args=[Project.objects.last().pk]))
@@ -97,13 +104,20 @@ class TestProjectViews(TestCase):
         self.assertRedirects(response, reverse('project_list'))
         self.assertEqual(Project.objects.count(), 0)
 
+    def test_health_check(self):
+        response = self.client.get(reverse('health_check'))
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {'status': 'ok'})
+
 class TestActivityViews(TestCase):
     def setUp(self):
         self.client = Client()
+        self.safe_client = Client(raise_request_exception=False)
         self.user = User.objects.create_user(username='testuser', password='pass')
         self.user.userprofile.role = 'tecnico_proyectos'
         self.user.userprofile.save()
         self.client.login(username='testuser', password='pass')
+        self.safe_client.login(username='testuser', password='pass')
         self.project = Project.objects.create(
             name='Test Project',
             description='Desc',
@@ -132,6 +146,13 @@ class TestActivityViews(TestCase):
         self.assertRedirects(response, reverse('activity_list'))
         self.assertEqual(Activity.objects.count(), 1)
 
+    def test_notification_schema_mismatch_is_handled_gracefully(self):
+        with patch("projects.views.Notification.objects.filter", side_effect=OperationalError("no such column: projects_notification.recipient_id")):
+            response = self.safe_client.get(reverse("notification_list"))
+
+        self.assertEqual(response.status_code, 503)
+        self.assertContains(response, "base de datos no esta sincronizada", status_code=503)
+
 class TestMilestoneViews(TestCase):
     def setUp(self):
         self.client = Client()
@@ -158,6 +179,8 @@ class TestMilestoneViews(TestCase):
             'name': 'New Milestone',
             'description': 'Desc',
             'due_date': date.today().isoformat(),
+            'phase': 'execution',
+            'is_phase_gate': False,
             'completed': False
         }
         response = self.client.post(reverse('milestone_create'), data)
@@ -167,10 +190,10 @@ class TestMilestoneViews(TestCase):
 class TestUserViews(TestCase):
     def setUp(self):
         self.client = Client()
-        self.user = User.objects.create_user(username='gestor', password='pass')
-        self.user.userprofile.role = 'gestor_proyectos'
+        self.user = User.objects.create_user(username='jefe', password='pass')
+        self.user.userprofile.role = 'jefe_departamental'
         self.user.userprofile.save()
-        self.client.login(username='gestor', password='pass')
+        self.client.login(username='jefe', password='pass')
 
     def test_user_list(self):
         response = self.client.get(reverse('user_list'))
@@ -215,12 +238,8 @@ class TestSeguimientoViews(TestCase):
         data = {
             'proyecto': self.project.pk,
             'fecha': date.today().isoformat(),
-            'perspectiva': 'financiera',
-            'indicador': 'Test',
-            'valor_actual': '50.00',
-            'valor_objetivo': '100.00',
-            'descripcion': 'Desc'
+            'observacion': 'Test observation'
         }
-        response = self.client.post(reverse('seguimiento_create'), data)
+        response = self.client.post(reverse('seguimiento_create', args=[self.project.pk]), data)
         self.assertRedirects(response, reverse('seguimiento_list'))
         self.assertEqual(Seguimiento.objects.count(), 1)

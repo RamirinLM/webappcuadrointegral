@@ -1,48 +1,42 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Iniciar Sesión{% endblock %}
+{% block title %}Iniciar sesion{% endblock %}
+{% block page_heading %}Acceso al sistema{% endblock %}
+{% block page_summary %}Ingresa con tus credenciales para acceder a proyectos, reportes y seguimiento.{% endblock %}
 
 {% block content %}
-<!-- Encabezado con Logo -->
-<div style="background-color: #ffffff; padding: 20px; text-align: center; 
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
-    <img src="{% static 'logo.png' %}" alt="Logo" class="rounded-circle"
-         style="max-width: 657px; width:10%; height:auto; display:block; margin:0 auto;">
-</div>
-
-<!-- Contenedor principal -->
-<div class="container d-flex justify-content-center align-items-center" 
-     style="min-height: 85vh; background: linear-gradient(to right, #00b4d8, #ffe066);">
-    
-    <div class="card shadow-lg p-4 text-center" 
-         style="max-width: 420px; width: 100%; border-radius: 12px;">
-        
-        <h2 class="mb-4" style="color: #0077b6; font-family: 'Georgia', serif;">Iniciar Sesión</h2>
-        
-        <form method="post" class="text-start">
-            {% csrf_token %}
-            
-            <!-- Campo Usuario -->
-            <div class="form-group mb-3">
-                <label for="id_username" style="color:#0077b6; font-weight:bold;">Usuario</label>
-                <input type="text" name="username" id="id_username" 
-                       class="form-control" required>
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-5">
+        <section class="content-card p-4 p-lg-5">
+            <div class="text-center mb-4">
+                <img src="{% static 'logo.png' %}" alt="Logo institucional" class="img-fluid rounded-4 shadow-sm" style="max-width: 96px;">
             </div>
+            <h2 class="h3 text-center mb-3">Iniciar sesion</h2>
+            <p class="text-muted text-center mb-4">Usa tu cuenta institucional para continuar.</p>
 
-            <!-- Campo Contraseña -->
-            <div class="form-group mb-4">
-                <label for="id_password" style="color:#0077b6; font-weight:bold;">Contraseña</label>
-                <input type="password" name="password" id="id_password" 
-                       class="form-control" required>
+            {% if form.errors %}
+            <div class="alert alert-danger" role="alert">
+                Usuario o contrasena no validos. Revisa tus datos e intenta nuevamente.
             </div>
+            {% endif %}
 
-            <!-- Botón -->
-            <button type="submit" class="btn btn-block" 
-                    style="background-color: #ffe066; color: #0077b6; font-weight: bold;">
-                Iniciar Sesión
-            </button>
-        </form>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_username" class="form-label fw-semibold">Usuario</label>
+                    <input type="text" name="username" id="id_username" class="form-control" autocomplete="username" required>
+                </div>
+                <div class="mb-4">
+                    <label for="id_password" class="form-label fw-semibold">Contrasena</label>
+                    <input type="password" name="password" id="id_password" class="form-control" autocomplete="current-password" required>
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Ingresar</button>
+                    <a href="{% url 'health_check' %}" class="btn btn-outline-secondary">Verificar estado del sistema</a>
+                </div>
+            </form>
+        </section>
     </div>
 </div>
 {% endblock %}

@@ -1,6 +1,8 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
+from datetime import date
+from projects.models import Project
 from stakeholders.models import Stakeholder
 
 class TestStakeholderViews(TestCase):
@@ -8,11 +10,19 @@ class TestStakeholderViews(TestCase):
         self.client = Client()
         self.user = User.objects.create_user(username='testuser', password='pass')
         self.client.login(username='testuser', password='pass')
+        self.project = Project.objects.create(
+            name='Proyecto Stakeholder',
+            description='Proyecto asociado',
+            start_date=date.today(),
+            end_date=date.today(),
+            created_by=self.user
+        )
         self.stakeholder = Stakeholder.objects.create(
             name='Test Stakeholder',
             email='test@example.com',
             role='client'
         )
+        self.stakeholder.projects.add(self.project)
 
     def test_stakeholder_list(self):
         response = self.client.get(reverse('stakeholders:stakeholder_list'))
@@ -33,7 +43,8 @@ class TestStakeholderViews(TestCase):
             'role': 'manager',
             'contact_info': 'Info',
             'interest_level': 'high',
-            'power_level': 'high'
+            'power_level': 'high',
+            'projects': [self.project.pk],
         }
         response = self.client.post(reverse('stakeholders:stakeholder_create'), data)
         self.assertRedirects(response, reverse('stakeholders:stakeholder_list'))
@@ -43,7 +54,8 @@ class TestStakeholderViews(TestCase):
         data = {
             'name': '',
             'email': 'invalid',
-            'role': 'manager'
+            'role': 'manager',
+            'projects': []
         }
         response = self.client.post(reverse('stakeholders:stakeholder_create'), data)
         self.assertEqual(response.status_code, 200)
@@ -63,7 +75,7 @@ class TestStakeholderViews(TestCase):
             'contact_info': 'Updated Info',
             'interest_level': 'medium',
             'power_level': 'medium',
-            'projects': []
+            'projects': [self.project.pk]
         }
         response = self.client.post(reverse('stakeholders:stakeholder_edit', args=[self.stakeholder.pk]), data)
         self.assertRedirects(response, reverse('stakeholders:stakeholder_list'))

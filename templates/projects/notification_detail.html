@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle de notificacion{% endblock %}
+{% block page_heading %}Detalle de notificacion{% endblock %}
+{% block page_summary %}Consulta el proyecto relacionado y el estado de lectura de la alerta.{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">{{ notification.get_alert_type_display }}</h2>
+            <p class="text-muted mb-0">Revisa el contexto de la alerta y navega al proyecto relacionado si necesitas actuar.</p>
+        </div>
+        <span class="status-chip">{% if notification.read_at %}Leida{% else %}Pendiente{% endif %}</span>
+    </div>
+
+    <div class="form-section">
+        <dl class="row mb-0">
+            <dt class="col-md-3">Proyecto</dt>
+            <dd class="col-md-9">{{ notification.project.name }}</dd>
+
+            <dt class="col-md-3">Mensaje</dt>
+            <dd class="col-md-9">{{ notification.message }}</dd>
+
+            <dt class="col-md-3">Creada</dt>
+            <dd class="col-md-9">{{ notification.created_at|date:"d/m/Y H:i" }}</dd>
+
+            <dt class="col-md-3">Estado</dt>
+            <dd class="col-md-9">{% if notification.read_at %}Leida{% else %}Pendiente{% endif %}</dd>
+        </dl>
+    </div>
+
+    <div class="page-actions justify-content-end mt-4">
+        <a href="{% url 'notification_list' %}" class="btn btn-outline-secondary">Volver a notificaciones</a>
+        {% if not notification.read_at %}
+        <a href="{% url 'notification_mark_read' notification.pk %}" class="btn btn-primary">Marcar como leida</a>
+        {% endif %}
+        <a href="{% url 'project_detail' notification.project.pk %}" class="btn btn-outline-primary">Ver proyecto</a>
+    </div>
+</section>
+{% endblock %}

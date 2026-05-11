@@ -1,171 +1,498 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load l10n %}
+
+{% block title %}Diagrama de Gantt{% endblock %}
+{% block page_heading %}Diagrama de Gantt{% endblock %}
+{% block page_summary %}Cronograma del proyecto {{ project.name }} con una vista de planificacion clara y operativa.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gantt-pro {
+        border: 1px solid rgba(23, 50, 59, 0.08);
+        border-radius: 1.1rem;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(23, 50, 59, 0.08);
+    }
+
+    .gantt-pro-toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background: linear-gradient(180deg, #f9fbfc 0%, #eef4f6 100%);
+        border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+    }
+
+    .gantt-pro-legend {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        color: #56717b;
+        font-size: 0.78rem;
+    }
+
+    .gantt-pro-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .gantt-dot {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 999px;
+        display: inline-block;
+    }
+
+    .gantt-dot.pending { background: #74838f; }
+    .gantt-dot.active { background: #dd8a00; }
+    .gantt-dot.complete { background: #23867a; }
+    .gantt-dot.milestone {
+        width: 0.7rem;
+        height: 0.7rem;
+        transform: rotate(45deg);
+        border-radius: 0.12rem;
+        background: #d62828;
+    }
+
+    .gantt-pro-scroll {
+        overflow-x: auto;
+    }
+
+    .gantt-pro-grid {
+        display: grid;
+        grid-template-columns: 430px minmax(780px, 1fr);
+    }
+
+    .gantt-sheet-head,
+    .gantt-time-head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f8fbfc;
+    }
+
+    .gantt-sheet-head {
+        border-right: 1px solid rgba(23, 50, 59, 0.08);
+    }
+
+    .gantt-sheet-cols,
+    .gantt-sheet-row {
+        display: grid;
+        grid-template-columns: 44px 1.75fr 0.8fr 0.9fr 0.9fr 0.6fr;
+        align-items: stretch;
+    }
+
+    .gantt-sheet-cols > div,
+    .gantt-sheet-row > div {
+        padding: 0.8rem 0.75rem;
+        border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+        font-size: 0.84rem;
+    }
+
+    .gantt-sheet-cols > div {
+        background: linear-gradient(180deg, #f8fbfc 0%, #edf3f5 100%);
+        font-weight: 700;
+        color: #2a4751;
+    }
+
+    .gantt-sheet-row {
+        background: #fff;
+    }
+
+    .gantt-sheet-row:nth-child(even) {
+        background: #fbfcfd;
+    }
+
+    .gantt-index {
+        text-align: center;
+        color: #71848e;
+        font-weight: 700;
+    }
+
+    .gantt-task-title {
+        font-weight: 700;
+        color: #16323b;
+        margin-bottom: 0.18rem;
+    }
+
+    .gantt-task-meta {
+        font-size: 0.74rem;
+        color: #67808a;
+    }
+
+    .gantt-time-head {
+        border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+        background: linear-gradient(180deg, #f8fbfc 0%, #edf3f5 100%);
+    }
+
+    .gantt-month-row,
+    .gantt-week-row {
+        position: relative;
+    }
+
+    .gantt-month-row {
+        height: 44px;
+        border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+    }
+
+    .gantt-week-row {
+        height: 32px;
+    }
+
+    .gantt-month-cell,
+    .gantt-week-cell {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 1px solid rgba(23, 50, 59, 0.08);
+        white-space: nowrap;
+    }
+
+    .gantt-month-cell {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #2d4b56;
+    }
+
+    .gantt-week-cell {
+        font-size: 0.72rem;
+        color: #6a818a;
+        justify-content: flex-start;
+        padding-left: 0.35rem;
+        overflow: hidden;
+    }
+
+    .gantt-timeline {
+        position: relative;
+        overflow: hidden;
+        background:
+            repeating-linear-gradient(
+                to right,
+                rgba(23, 50, 59, 0.05) 0,
+                rgba(23, 50, 59, 0.05) 1px,
+                transparent 1px,
+                transparent 55px
+            ),
+            linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+    }
+
+    .gantt-timeline-row {
+        position: relative;
+        height: 60px;
+        border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+    }
+
+    .gantt-timeline-row:nth-child(even) {
+        background-color: rgba(244, 247, 249, 0.5);
+    }
+
+    .gantt-today {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #d62828;
+        z-index: 1;
+    }
+
+    .gantt-today::before {
+        content: "Hoy";
+        position: absolute;
+        top: 0.45rem;
+        left: 0.35rem;
+        padding: 0.12rem 0.42rem;
+        border-radius: 999px;
+        background: #d62828;
+        color: #fff;
+        font-size: 0.68rem;
+        font-weight: 700;
+    }
+
+    .gantt-bar {
+        position: absolute;
+        top: 18px;
+        height: 24px;
+        border-radius: 0.55rem;
+        display: flex;
+        align-items: center;
+        padding: 0 0.7rem;
+        overflow: hidden;
+        box-shadow: 0 8px 18px rgba(23, 50, 59, 0.12);
+        color: #fff;
+        font-size: 0.76rem;
+        font-weight: 700;
+        z-index: 2;
+    }
+
+    .gantt-bar.is-pending {
+        background: linear-gradient(90deg, #74838f 0%, #5d6973 100%);
+    }
+
+    .gantt-bar.is-active {
+        background: linear-gradient(90deg, #ee9b00 0%, #cb7f00 100%);
+    }
+
+    .gantt-bar.is-complete {
+        background: linear-gradient(90deg, #2a9d8f 0%, #1f7d71 100%);
+    }
+
+    .gantt-bar-progress {
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        bottom: 4px;
+        border-radius: 0.38rem;
+        background: rgba(255, 255, 255, 0.24);
+    }
+
+    .gantt-bar-label {
+        position: relative;
+        z-index: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .gantt-bar.is-critical {
+        box-shadow: 0 0 0 2px rgba(214, 40, 40, 0.25), 0 12px 24px rgba(214, 40, 40, 0.18);
+    }
+
+    .gantt-predecessor-hint {
+        position: absolute;
+        top: 8px;
+        height: 10px;
+        border-top: 2px dashed rgba(40, 70, 81, 0.28);
+        border-right: 2px dashed rgba(40, 70, 81, 0.28);
+        border-top-right-radius: 0.45rem;
+        z-index: 1;
+    }
+
+    .gantt-milestone {
+        position: absolute;
+        top: 22px;
+        width: 16px;
+        height: 16px;
+        transform: rotate(45deg);
+        border-radius: 0.18rem;
+        background: #d62828;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px rgba(214, 40, 40, 0.12);
+        z-index: 2;
+    }
+
+    .gantt-milestone.is-complete {
+        background: #2a9d8f;
+        box-shadow: 0 0 0 2px rgba(42, 157, 143, 0.15);
+    }
+
+    .gantt-milestone-label {
+        position: absolute;
+        top: 7px;
+        transform: translateX(-40%);
+        font-size: 0.68rem;
+        color: #6a818a;
+        white-space: nowrap;
+        z-index: 2;
+    }
+
+    .gantt-dependency-layer {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .gantt-dependency-path {
+        fill: none;
+        stroke: rgba(74, 95, 105, 0.55);
+        stroke-width: 2.2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        marker-end: url(#ganttArrow);
+    }
+
+    .gantt-dependency-path.is-critical {
+        stroke: #d62828;
+        stroke-width: 2.8;
+        marker-end: url(#ganttArrowCritical);
+    }
+
+    .gantt-summary {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+    }
+
+    @media (max-width: 900px) {
+        .gantt-summary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/gantt.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
-
-<div class="container-fluid my-5 px-4">
-    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <div class="p-4 text-white" style="background: linear-gradient(135deg, #004c99 0%, #007bff 100%);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="fw-bold mb-1">📊 Diagrama de Gantt</h2>
-                    <p class="mb-0 opacity-75">Cronograma detallado del proyecto: <strong>{{ project.name }}</strong></p>
-                </div>
-                <div>
-                    <a href="{% url 'project_financial_summary' project.pk %}" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold me-2">
-                        💰 Resumen Financiero
-                    </a>
-                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">
-                        ⬅️ Volver al Proyecto
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <div class="card-body p-0">
-            <div id="container" style="width:100%; height: 600px;"></div>
-        </div>
-
-        <div class="card-footer bg-white py-3 border-0">
-            <div class="row text-center">
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Estado del Proyecto</small>
-                    <span class="badge bg-info text-dark rounded-pill">{{ project.get_status_display }}</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Total Actividades</small>
-                    <span class="fw-bold">{{ activities.count }}</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Progreso</small>
-                    <span class="fw-bold">{{ project.get_progress_percentage }}%</span>
-                </div>
-                <div class="col-md-3">
-                    <small class="text-muted d-block">Exportar</small>
-                    <button onclick="window.print()" class="btn btn-link btn-sm text-decoration-none text-primary">🖨️ Imprimir Reporte</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Legend -->
-    <div class="card mt-4 shadow-sm">
-        <div class="card-body">
-            <h6 class="mb-3">Leyenda de Estados</h6>
-            <div class="row">
-                <div class="col-md-3">
-                    <span class="badge bg-secondary">Pendiente</span>
-                </div>
-                <div class="col-md-3">
-                    <span class="badge bg-warning text-dark">En Progreso</span>
-                </div>
-                <div class="col-md-3">
-                    <span class="badge bg-success">Completada</span>
-                </div>
-                <div class="col-md-3">
-                    <span class="text-muted">→ Dependencia</span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Configuración de Highcharts Gantt con dependencias
-    Highcharts.ganttChart('container', {
-        title: { text: null },
-        chart: {
-            style: { fontFamily: "'Segoe UI', Roboto, sans-serif" }
-        },
-        plotOptions: {
-            gantt: {
-                borderRadius: 4,
-                borderWidth: 0,
-                grouping: false,
-                dataLabels: { 
-                    enabled: true, 
-                    style: { fontWeight: 'normal', textOutline: 'none' },
-                    format: '{point.name}'
-                }
-            }
-        },
-        xAxis: [{
-            gridLineWidth: 1,
-            labels: { style: { color: '#666' } },
-            currentDateIndicator: {
-                enabled: true,
-                color: '#dc3545',
-                width: 2,
-                label: {
-                    format: '%e %b'
-                }
-            }
-        }],
-        yAxis: {
-            labels: {
-                style: { fontWeight: 'bold', fontSize: '13px', color: '#333' }
-            },
-            grid: {
-                enabled: true
-            }
-        },
-        tooltip: {
-            pointFormat: '<span style="font-weight:bold">{point.name}</span><br/>' +
-                         '<span>Inicio: {point.start:%e %b %Y}</span><br/>' +
-                         '<span>Fin: {point.end:%e %b %Y}</span><br/>' +
-                         '<span>Estado: {point.status}</span>'
-        },
-        series: [{
-            name: '{{ project.name|escapejs }}',
-            data: [
-                {% if activities %}
-                    {% for activity in activities %}
-                    {% if activity.start_date and activity.end_date %}
-                    {
-                        name: '{{ activity.name|escapejs }}',
-                        id: 'act_{{ activity.id }}',
-                        start: Date.UTC({{ activity.start_date.year }}, {{ activity.start_date.month|add:-1 }}, {{ activity.start_date.day }}),
-                        end: Date.UTC({{ activity.end_date.year }}, {{ activity.end_date.month|add:-1 }}, {{ activity.end_date.day }}),
-                        {% if activity.status == 'completed' %}
-                        color: '#28a745',
-                        status: 'Completada',
-                        {% elif activity.status == 'in_progress' %}
-                        color: '#ffc107',
-                        status: 'En Progreso',
-                        {% else %}
-                        color: '#6c757d',
-                        status: 'Pendiente',
-                        {% endif %}
-                        {% if activity.predecessor %}
-                        parent: 'act_{{ activity.predecessor.id }}',
-                        dependency: 'act_{{ activity.predecessor.id }}',
-                        {% endif %}
-                    }{% if not forloop.last %},{% endif %}
-                    {% endif %}
-                    {% endfor %}
+<section class="page-card mb-4">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">{{ project.name }}</h2>
+            <p class="text-muted mb-0">
+                Vista ejecutiva del cronograma
+                {% if timeline_start and timeline_end %}
+                del {{ timeline_start|date:"d/m/Y" }} al {{ timeline_end|date:"d/m/Y" }}
                 {% endif %}
-            ]
-        }],
-        credits: { enabled: false },
-        exporting: { 
-            enabled: true,
-            buttons: {
-                contextButton: {
-                    menuItems: ['downloadPNG', 'downloadPDF', 'downloadSVG']
-                }
-            }
-        }
-    });
-</script>
+            </p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-secondary">Volver al proyecto</a>
+            <a href="{% url 'reports:calendar_view' project.pk %}" class="btn btn-outline-primary">Ver calendario</a>
+        </div>
+    </div>
 
-<style>
-    @media print {
-        .card-footer, .btn { display: none !important; }
-    }
-    body { background-color: #f8f9fa; }
-    .card { transition: transform 0.2s; }
-</style>
+    {% if gantt_rows %}
+    <div class="gantt-pro">
+        <div class="gantt-pro-toolbar">
+            <div class="gantt-pro-legend">
+                <span><i class="gantt-dot pending"></i>Pendiente</span>
+                <span><i class="gantt-dot active"></i>En progreso</span>
+                <span><i class="gantt-dot complete"></i>Completada</span>
+                <span><i class="gantt-dot milestone"></i>Hito</span>
+                <span><i class="gantt-dot milestone" style="background:#d62828; transform:none; border-radius:999px;"></i>Camino critico</span>
+            </div>
+            <div class="small text-muted">Escala semanal optimizada para lectura y dependencias visibles</div>
+        </div>
+
+        <div class="gantt-pro-scroll">
+            <div class="gantt-pro-shell" style="min-width: {{ timeline_width_px|add:430 }}px;">
+                <div class="gantt-pro-grid">
+                    <div class="gantt-sheet-head">
+                        <div class="gantt-sheet-cols">
+                            <div>#</div>
+                            <div>Tarea</div>
+                            <div>Estado</div>
+                            <div>Inicio</div>
+                            <div>Fin</div>
+                            <div>Dur.</div>
+                        </div>
+                    </div>
+
+                    <div class="gantt-time-head">
+                        <div class="gantt-month-row">
+                            {% for month in month_markers %}
+                            <div class="gantt-month-cell" style="left: {{ month.offset_px|unlocalize }}px; width: {{ month.width_px|unlocalize }}px;">
+                                {{ month.label }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="gantt-week-row">
+                            {% for week in week_markers %}
+                            <div class="gantt-week-cell" style="left: {{ week.offset_px|unlocalize }}px; width: {{ week.width_px|unlocalize }}px;">
+                                {% if week.show_label %}
+                                {{ week.label }}
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div>
+                        {% for row in gantt_rows %}
+                        <div class="gantt-sheet-row">
+                            <div class="gantt-index">{{ forloop.counter }}</div>
+                            <div>
+                                <div class="gantt-task-title">{{ row.name }}</div>
+                                <div class="gantt-task-meta">
+                                    {{ row.owner }}
+                                    {% if row.predecessor %}
+                                    | Depende de {{ row.predecessor }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>{{ row.status }}</div>
+                            <div>{{ row.start_date|date:"d/m/Y" }}</div>
+                            <div>{{ row.end_date|date:"d/m/Y" }}</div>
+                            <div>{{ row.duration_days }} d</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="gantt-timeline" style="width: {{ timeline_width_px|unlocalize }}px; min-width: {{ timeline_width_px|unlocalize }}px; height: {{ timeline_height_px|unlocalize }}px;">
+                        {% if today_offset is not None %}
+                        <div class="gantt-today" style="left: {{ today_offset|unlocalize }}px;"></div>
+                        {% endif %}
+
+                        <svg class="gantt-dependency-layer" viewBox="0 0 {{ timeline_width_px|unlocalize }} {{ timeline_height_px|unlocalize }}" preserveAspectRatio="none">
+                            <defs>
+                                <marker id="ganttArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                                    <path d="M0,0 L8,4 L0,8 z" fill="rgba(74, 95, 105, 0.75)"></path>
+                                </marker>
+                                <marker id="ganttArrowCritical" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                                    <path d="M0,0 L9,4.5 L0,9 z" fill="#d62828"></path>
+                                </marker>
+                            </defs>
+                            {% for line in dependency_lines %}
+                            <path class="gantt-dependency-path {% if line.is_critical %}is-critical{% endif %}" d="{{ line.path }}"></path>
+                            {% endfor %}
+                        </svg>
+
+                        {% for row in gantt_rows %}
+                        <div class="gantt-timeline-row">
+                            {% for marker in milestone_markers %}
+                            <div
+                                class="gantt-milestone {% if marker.completed %}is-complete{% endif %}"
+                                style="left: {{ marker.offset_px|unlocalize }}px;"
+                                title="{{ marker.name }} - {{ marker.date|date:'d/m/Y' }}"
+                            ></div>
+                            {% endfor %}
+
+                            <div class="gantt-bar {{ row.bar_class }} {% if row.is_critical %}is-critical{% endif %}" style="left: {{ row.offset_px|unlocalize }}px; width: {{ row.width_px|unlocalize }}px;" title="{{ row.name }} - {{ row.status }}">
+                                <div class="gantt-bar-progress" style="width: {{ row.progress|unlocalize }}%;"></div>
+                                <span class="gantt-bar-label">{{ row.name }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% if milestone_markers|length <= 6 %}
+                        {% for marker in milestone_markers %}
+                        <div class="gantt-milestone-label" style="left: {{ marker.offset_px|unlocalize }}px;">{{ marker.name }}</div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">No hay actividades con fechas suficientes para construir el diagrama de Gantt.</div>
+    {% endif %}
+</section>
+
+<section class="page-card">
+    <div class="gantt-summary">
+        <div class="metric-card">
+            <div class="metric-label">Estado del proyecto</div>
+            <div class="metric-value">{{ project.get_status_display }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Actividades</div>
+            <div class="metric-value">{{ activities.count }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Hitos</div>
+            <div class="metric-value">{{ milestones.count }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Avance</div>
+            <div class="metric-value">{{ project.get_progress_percentage }}%</div>
+        </div>
+    </div>
+</section>
 {% endblock %}

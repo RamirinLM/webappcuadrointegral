@@ -1,48 +1,44 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Calendario de Proyecto - {{ project.name }}{% endblock %}
+{% block title %}Calendario del proyecto{% endblock %}
+{% block page_heading %}Calendario del proyecto{% endblock %}
+{% block page_summary %}Vista cronologica de actividades e hitos para {{ project.name }}.{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+{% endblock %}
 
 {% block content %}
-<!-- FullCalendar CSS -->
-<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
-<!-- FullCalendar JS -->
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">{{ project.name }}</h2>
+            <p class="text-muted mb-0">Calendario consolidado de eventos del proyecto.</p>
+        </div>
+        <a href="{% url 'reports:report_list' %}" class="btn btn-outline-secondary">Volver a reportes</a>
+    </div>
+
+    <div class="form-section">
+        <div id="calendar" style="min-height: 600px;"></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/locales/es.global.min.js"></script>
-
-<div class="container-fluid my-4">
-    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-        <div class="p-4 text-white" style="background: linear-gradient(135deg, #004c99 0%, #007bff 100%);">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="fw-bold mb-1">Calendario del Proyecto</h2>
-                    <p class="mb-0 opacity-75">Vista cronológica: <strong>{{ project.name }}</strong></p>
-                </div>
-                <a href="{% url 'reports:report_list' %}" class="btn btn-light btn-sm rounded-pill px-3 fw-bold">
-                    <i class="fas fa-arrow-left me-2"></i>Volver
-                </a>
-            </div>
-        </div>
-
-        <div class="card-body p-4">
-            <div id="calendar" style="min-height: 600px;"></div>
-        </div>
-    </div>
-</div>
-
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    var calendarEl = document.getElementById('calendar');
-    var eventsData = {{ events|safe }};
-    
-    // Filter out events with null start dates and clean data
-    var validEvents = [];
+    const calendarEl = document.getElementById('calendar');
+    const eventsData = {{ events|safe }};
+    const validEvents = [];
+
     if (Array.isArray(eventsData)) {
-        for (var i = 0; i < eventsData.length; i++) {
-            var event = eventsData[i];
-            if (event.start && event.start !== null) {
+        for (let i = 0; i < eventsData.length; i += 1) {
+            const event = eventsData[i];
+            if (event.start) {
                 validEvents.push({
-                    title: event.title || 'Sin título',
+                    title: event.title || 'Sin titulo',
                     start: event.start,
                     end: event.end || null,
                     backgroundColor: event.backgroundColor || '#007bff',
@@ -52,9 +48,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    
-    var calendar = new FullCalendar.Calendar(calendarEl, {
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
+        locale: 'es',
         events: validEvents,
         eventDisplay: 'block',
         headerToolbar: {
@@ -67,25 +64,10 @@ document.addEventListener('DOMContentLoaded', function() {
             month: 'Mes',
             week: 'Semana',
             list: 'Lista'
-        },
-        locale: 'es',
-        eventClick: function(info) {
-            alert('Evento: ' + info.event.title);
         }
     });
+
     calendar.render();
 });
 </script>
-
-<style>
-    .fc {
-        font-family: 'Segoe UI', Roboto, sans-serif;
-    }
-    .fc-event {
-        cursor: pointer;
-    }
-    .fc-toolbar-title {
-        font-size: 1.3rem !important;
-    }
-</style>
 {% endblock %}

@@ -1,66 +1,62 @@
 {% extends 'base.html' %}
 
-{% block title %}Gráficos de Rendimiento - {{ project.name }}{% endblock %}
+{% block title %}Graficos de rendimiento{% endblock %}
+{% block page_heading %}Graficos de rendimiento{% endblock %}
+{% block page_summary %}Visualiza distribucion de estados y costos por actividad para {{ project.name }}.{% endblock %}
 
 {% block content %}
+<div class="row g-4">
+    <div class="col-12 col-xl-6">
+        <section class="page-card">
+            <h2 class="section-title">Estado de actividades</h2>
+            <div class="form-section">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </section>
+    </div>
+    <div class="col-12 col-xl-6">
+        <section class="page-card">
+            <h2 class="section-title">Costos por actividad</h2>
+            <div class="form-section">
+                <canvas id="costChart"></canvas>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="page-actions justify-content-end mt-4">
+    <a href="{% url 'reports:report_list' %}" class="btn btn-outline-secondary">Volver a reportes</a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<h1>Gráficos de Rendimiento del Proyecto: {{ project.name }}</h1>
-
-<div style="width: 50%; margin: auto;">
-    <canvas id="statusChart"></canvas>
-</div>
-
-<div style="width: 50%; margin: auto; margin-top: 50px;">
-    <canvas id="costChart"></canvas>
-</div>
-
 <script>
-    // Status Chart
-    const statusCtx = document.getElementById('statusChart').getContext('2d');
-    const statusChart = new Chart(statusCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Pendiente', 'En Progreso', 'Completada'],
-            datasets: [{
-                data: [{{ status_data.pending }}, {{ status_data.in_progress }}, {{ status_data.completed }}],
-                backgroundColor: ['#ffc107', '#007bff', '#28a745'],
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Estado de Actividades'
-                }
-            }
-        }
-    });
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Pendiente', 'En progreso', 'Completada'],
+        datasets: [{
+            data: [{{ status_data.pending }}, {{ status_data.in_progress }}, {{ status_data.completed }}],
+            backgroundColor: ['#ffc107', '#007bff', '#28a745']
+        }]
+    },
+    options: { responsive: true }
+});
 
-    // Cost Chart
-    const costCtx = document.getElementById('costChart').getContext('2d');
-    const costLabels = {{ cost_labels|safe }};
-    const costData = {{ cost_data|safe }};
-    const costChart = new Chart(costCtx, {
-        type: 'bar',
-        data: {
-            labels: costLabels,
-            datasets: [{
-                label: 'Costo',
-                data: costData,
-                backgroundColor: '#007bff',
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Costos por Actividad'
-                }
-            }
-        }
-    });
+const costCtx = document.getElementById('costChart').getContext('2d');
+new Chart(costCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ cost_labels|safe }},
+        datasets: [{
+            label: 'Costo',
+            data: {{ cost_data|safe }},
+            backgroundColor: '#007bff'
+        }]
+    },
+    options: { responsive: true }
+});
 </script>
-<a href="{% url 'reports:report_list' %}" class="btn btn-secondary">Volver a Reportes</a>
 {% endblock %}

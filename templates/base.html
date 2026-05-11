@@ -1,141 +1,510 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}CMI GAD MUNICIPAL DE CELICA{% endblock %}</title>
+    <title>{% block title %}CMI GAD Municipal de Celica{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    {% load static %}
+    {% block extra_css %}{% endblock %}
     <style>
+        :root {
+            --cmi-primary: #005f73;
+            --cmi-primary-dark: #0a3d4a;
+            --cmi-accent: #ee9b00;
+            --cmi-accent-soft: #fff4d6;
+            --cmi-surface: #ffffff;
+            --cmi-bg: #f4f7f9;
+            --cmi-border: #d7e0e5;
+            --cmi-text: #17323b;
+            --cmi-muted: #55707b;
+            --shell-width: 280px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
-            background-color: #f8f9fa;
-        }
-        .sidebar {
-            height: 100vh;
-            background-color: #00b4d8; /* Celeste */
-            color: white;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 250px;
-            padding-top: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            z-index: 1000;
-        }
-        .sidebar a, .sidebar button {
-            color: white;
-            text-decoration: none;
-            display: block;
-            padding: 12px 20px;
-            border: none;
-            background: none;
-            text-align: left;
-            width: 100%;
-            transition: 0.3s;
-            font-size: 0.95rem;
-        }
-        .sidebar a:hover, .sidebar button:hover {
-            background-color: #ffe066; /* Amarillo */
-            color: #004c6d; /* Contraste */
-            padding-left: 30px;
-        }
-        .content {
-            margin-left: 250px;
-            padding: 20px 20px 80px 20px; /* Espacio para el footer */
+            margin: 0;
+            background:
+                radial-gradient(circle at top right, rgba(238, 155, 0, 0.16), transparent 22rem),
+                linear-gradient(180deg, #f7fbfc 0%, var(--cmi-bg) 100%);
+            color: var(--cmi-text);
             min-height: 100vh;
         }
-        .header {
-            background-color: #ffffff;
-            padding: 15px 25px;
-            border-bottom: 2px solid #00b4d8;
-            margin-bottom: 20px;
-            border-radius: 0 0 10px 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+
+        .skip-link {
+            position: absolute;
+            left: 1rem;
+            top: -3rem;
+            z-index: 2000;
+            padding: 0.75rem 1rem;
+            background: var(--cmi-primary-dark);
+            color: #fff;
+            border-radius: 0.75rem;
+            text-decoration: none;
         }
-        .header h1 {
-            font-family: 'Georgia', serif;
-            font-size: 24px;
-            font-weight: bold;
-            color: #00b4d8;
-            margin: 0;
+
+        .skip-link:focus {
+            top: 1rem;
         }
-        footer {
-            margin-left: 250px;
-            background-color: #ffe066; /* Amarillo */
-            color: #004c6d;
-            text-align: center;
-            padding: 10px;
+
+        .app-shell {
+            min-height: 100vh;
+        }
+
+        .app-sidebar {
+            width: var(--shell-width);
+            min-height: 100vh;
+            background: linear-gradient(180deg, var(--cmi-primary) 0%, var(--cmi-primary-dark) 100%);
+            color: #fff;
+            padding: 1.5rem 1rem;
             position: fixed;
-            bottom: 0;
-            width: calc(100% - 250px);
-            font-weight: bold;
-            font-size: 0.85rem;
-            z-index: 999;
+            inset: 0 auto 0 0;
+            overflow-y: auto;
+            box-shadow: 0 0 2rem rgba(15, 44, 56, 0.15);
         }
-        /* Ajuste para que los formularios de logout no rompan el diseño */
-        .sidebar form {
+
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .app-brand img {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 1rem;
+            object-fit: cover;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .app-brand-title {
             margin: 0;
-            padding: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        .app-brand-subtitle {
+            margin: 0;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-section-title {
+            margin: 1.25rem 0 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.72);
+        }
+
+        .sidebar-link,
+        .sidebar-action {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 0.8rem 0.95rem;
+            margin-bottom: 0.35rem;
+            color: #fff;
+            text-decoration: none;
+            border: 1px solid transparent;
+            border-radius: 0.9rem;
+            background: transparent;
+            transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .sidebar-link:hover,
+        .sidebar-link:focus,
+        .sidebar-action:hover,
+        .sidebar-action:focus {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.16);
+            transform: translateX(2px);
+        }
+
+        .sidebar-meta {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.92rem;
+        }
+
+        .app-main {
+            margin-left: var(--shell-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+            backdrop-filter: blur(10px);
+            background: rgba(247, 251, 252, 0.92);
+            border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+        }
+
+        .app-topbar-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 1.25rem;
+        }
+
+        .page-summary h1 {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: var(--cmi-primary-dark);
+        }
+
+        .page-summary p {
+            margin: 0.25rem 0 0;
+            color: var(--cmi-muted);
+            font-size: 0.95rem;
+        }
+
+        .topbar-badges {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .shell-badge {
+            border-radius: 999px;
+            padding: 0.45rem 0.8rem;
+            border: 1px solid var(--cmi-border);
+            background: var(--cmi-surface);
+            color: var(--cmi-primary-dark);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .app-content {
+            flex: 1;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 5rem;
+        }
+
+        .content-card {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(23, 50, 59, 0.08);
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2rem rgba(15, 44, 56, 0.06);
+        }
+
+        .page-card {
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(23, 50, 59, 0.08);
+            border-radius: 1.25rem;
+            box-shadow: 0 1rem 2rem rgba(15, 44, 56, 0.06);
+            padding: 1.5rem;
+        }
+
+        .page-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .page-actions {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .form-section {
+            background: #fff;
+            border: 1px solid rgba(23, 50, 59, 0.08);
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .metric-card {
+            background: #fff;
+            border: 1px solid rgba(23, 50, 59, 0.08);
+            border-radius: 1rem;
+            padding: 1rem 1.1rem;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--cmi-muted);
+            margin-bottom: 0.35rem;
+        }
+
+        .metric-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--cmi-primary-dark);
+        }
+
+        .section-title {
+            margin: 0 0 1rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--cmi-primary-dark);
+        }
+
+        .data-table {
+            width: 100%;
+            margin: 0;
+        }
+
+        .data-table thead th {
+            background: var(--cmi-accent-soft);
+            color: var(--cmi-primary-dark);
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            border-bottom-width: 1px;
+        }
+
+        .data-table tbody td {
+            vertical-align: middle;
+        }
+
+        .table-card {
+            overflow: hidden;
+            border-radius: 1rem;
+            border: 1px solid rgba(23, 50, 59, 0.08);
+            background: #fff;
+        }
+
+        .empty-state {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--cmi-muted);
+        }
+
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.86rem;
+            font-weight: 600;
+            background: #edf2f4;
+            color: var(--cmi-primary-dark);
+        }
+
+        .app-footer {
+            margin-left: var(--shell-width);
+            border-top: 1px solid rgba(23, 50, 59, 0.08);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .app-footer-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0.85rem 1.25rem 1rem;
+            font-size: 0.9rem;
+            color: var(--cmi-muted);
+        }
+
+        .form-control,
+        .form-select,
+        textarea {
+            border-radius: 0.85rem;
+            border-color: #bfd1d9;
+        }
+
+        .form-control:focus,
+        .form-select:focus,
+        textarea:focus,
+        .btn:focus,
+        a:focus {
+            box-shadow: 0 0 0 0.2rem rgba(0, 95, 115, 0.18);
+        }
+
+        .mobile-nav-toggle {
+            display: none;
+        }
+
+        @media (max-width: 991.98px) {
+            .app-sidebar {
+                display: none;
+            }
+
+            .app-main,
+            .app-footer {
+                margin-left: 0;
+            }
+
+            .mobile-nav-toggle {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 2.75rem;
+            }
+
+            .app-topbar-inner {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            .app-content {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="text-center mb-4">
-            <h4 class="fw-bold" style="letter-spacing: 2px;">CMI CELICA</h4>
-            <hr style="background-color: white; opacity: 0.5;">
+    <a class="skip-link" href="#main-content">Saltar al contenido</a>
+
+    {% if user.is_authenticated %}
+    <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+        <div class="offcanvas-header">
+            <h2 class="offcanvas-title h5" id="mobileNavLabel">Navegacion principal</h2>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar menu"></button>
         </div>
-        
-        <a href="{% url 'dashboard' %}">🏠 Tablero</a>
-        <a href="{% url 'project_list' %}">📂 Proyectos</a>
-        <a href="{% url 'activity_list' %}">📋 Actividades</a>
-        <a href="{% url 'milestone_list' %}">🎯 Hitos</a>
-        <a href="{% url 'stakeholders:stakeholder_list' %}">👥 Interesados</a>
-        <a href="{% url 'resources:resource_list' %}">⚙️ Recursos</a>
-        <a href="{% url 'risks:risk_list' %}">⚠️ Riesgos</a>
-        <a href="{% url 'reports:report_list' %}">📊 Reportes</a>
-        <a href="{% url 'seguimiento_list' %}">🔎 Seguimiento</a>
-        <a href="{% url 'user_list' %}">👤 Usuarios</a>
-        
+        <div class="offcanvas-body">
+            <nav aria-label="Navegacion movil">
+                <a class="sidebar-link" href="{% url 'dashboard' %}">Tablero</a>
+                <a class="sidebar-link" href="{% url 'project_list' %}">Proyectos</a>
+                <a class="sidebar-link" href="{% url 'project_wizard' %}">Nuevo proyecto</a>
+                <a class="sidebar-link" href="{% url 'activity_list' %}">Actividades</a>
+                <a class="sidebar-link" href="{% url 'milestone_list' %}">Hitos</a>
+                <a class="sidebar-link" href="{% url 'stakeholders:stakeholder_list' %}">Interesados</a>
+                <a class="sidebar-link" href="{% url 'stakeholders:feedback_list' %}">Feedback</a>
+                <a class="sidebar-link" href="{% url 'resources:resource_list' %}">Recursos</a>
+                <a class="sidebar-link" href="{% url 'risks:risk_list' %}">Riesgos</a>
+                <a class="sidebar-link" href="{% url 'reports:report_list' %}">Reportes</a>
+                <a class="sidebar-link" href="{% url 'seguimiento_list' %}">Seguimiento</a>
+                <a class="sidebar-link" href="{% url 'change_request_list' %}">Solicitudes de cambio</a>
+                <a class="sidebar-link" href="{% url 'notification_list' %}">Notificaciones</a>
+                {% if can_manage_users %}
+                <a class="sidebar-link" href="{% url 'user_list' %}">Usuarios</a>
+                {% endif %}
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="app-shell">
         {% if user.is_authenticated %}
-            <hr style="background-color: white; opacity: 0.5;">
-            <form method="post" action="{% url 'logout' %}">
-                {% csrf_token %}
-                <button type="submit">🚪 Cerrar Sesión ({{ user.username }})</button>
-            </form>
-        {% else %}
-            <a href="{% url 'login' %}">🔑 Iniciar Sesión</a>
-        {% endif %}
-    </div>
-
-    <div class="content">
-        <div class="header d-flex justify-content-between align-items-center">
-            <h1>SISTEMA DE GESTIÓN GAD CELICA</h1>
-            <span class="badge bg-light text-dark border">v2026.1</span>
-        </div>
-
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <aside class="app-sidebar" aria-label="Navegacion principal">
+            <div class="app-brand">
+                <img src="{% static 'logo.png' %}" alt="Logo del sistema">
+                <div>
+                    <p class="app-brand-title">CMI Celica</p>
+                    <p class="app-brand-subtitle">Gestion integral de proyectos</p>
                 </div>
-            {% endfor %}
+            </div>
+
+            <p class="nav-section-title">Operacion</p>
+            <nav>
+                <a class="sidebar-link" href="{% url 'dashboard' %}">Tablero</a>
+                <a class="sidebar-link" href="{% url 'project_list' %}">Proyectos</a>
+                <a class="sidebar-link" href="{% url 'project_wizard' %}">Nuevo proyecto</a>
+                <a class="sidebar-link" href="{% url 'activity_list' %}">Actividades</a>
+                <a class="sidebar-link" href="{% url 'milestone_list' %}">Hitos</a>
+                <a class="sidebar-link" href="{% url 'seguimiento_list' %}">Seguimiento</a>
+            </nav>
+
+            <p class="nav-section-title">Control</p>
+            <nav>
+                <a class="sidebar-link" href="{% url 'stakeholders:stakeholder_list' %}">Interesados</a>
+                <a class="sidebar-link" href="{% url 'stakeholders:feedback_list' %}">Feedback</a>
+                <a class="sidebar-link" href="{% url 'resources:resource_list' %}">Recursos</a>
+                <a class="sidebar-link" href="{% url 'risks:risk_list' %}">Riesgos</a>
+                <a class="sidebar-link" href="{% url 'reports:report_list' %}">Reportes</a>
+                <a class="sidebar-link" href="{% url 'change_request_list' %}">Solicitudes de cambio</a>
+                <a class="sidebar-link" href="{% url 'notification_list' %}">Notificaciones</a>
+                {% if can_manage_users %}
+                <a class="sidebar-link" href="{% url 'user_list' %}">Usuarios</a>
+                {% endif %}
+            </nav>
+
+            <div class="sidebar-meta">
+                <div><strong>Usuario:</strong> {{ user.get_full_name|default:user.username }}</div>
+                <div><strong>Rol:</strong> {{ user_role_label|default:"Sin rol asignado" }}</div>
+                <div class="mt-2">
+                    <form method="post" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="sidebar-action">Cerrar sesion</button>
+                    </form>
+                </div>
+            </div>
+        </aside>
         {% endif %}
 
-        {% block content %}{% endblock %}
+        <div class="app-main">
+            <header class="app-topbar">
+                <div class="app-topbar-inner">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if user.is_authenticated %}
+                        <button class="btn btn-outline-secondary mobile-nav-toggle" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-controls="mobileNav">
+                            Menu
+                        </button>
+                        {% endif %}
+                        <div class="page-summary">
+                            <h1>{% block page_heading %}Sistema de gestion GAD Celica{% endblock %}</h1>
+                            <p>{% block page_summary %}Seguimiento, control y reportes de proyectos institucionales.{% endblock %}</p>
+                        </div>
+                    </div>
+                    <div class="topbar-badges">
+                        {% if user.is_authenticated %}
+                        <span class="shell-badge">{{ user_role_label|default:"Usuario autenticado" }}</span>
+                        {% endif %}
+                        <span class="shell-badge">{{ app_version }}</span>
+                    </div>
+                </div>
+            </header>
+
+            <main id="main-content" class="app-content" tabindex="-1">
+                {% if messages %}
+                    <div class="mb-4" aria-live="polite" aria-atomic="true">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar mensaje"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </main>
+        </div>
     </div>
 
-    <footer>
-        <div>
-            {% if static %}
-                <img src="{% static 'projects/images/celica_logo.png' %}" alt="Logo" 
-                     style="vertical-align: middle; margin-right: 10px; max-height:30px;">
-            {% endif %}
-            GAD Municipal de Celica - Sistema de Gestión de Proyectos © 2026
+    <footer class="app-footer">
+        <div class="app-footer-inner">
+            GAD Municipal de Celica | Plataforma de gestion de proyectos | {{ app_version }}
         </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

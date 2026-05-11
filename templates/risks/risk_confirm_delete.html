@@ -1,17 +1,18 @@
 {% extends 'base.html' %}
-{% block title %}Eliminar Riesgo{% endblock %}
+
+{% block title %}Eliminar riesgo{% endblock %}
+{% block page_heading %}Eliminar riesgo{% endblock %}
+{% block page_summary %}Confirma la eliminacion del riesgo seleccionado y su historial asociado al proyecto.{% endblock %}
+
 {% block content %}
-<div class="container my-5 p-4 shadow-lg rounded" style="max-width:600px; background:#fff; border-top: 5px solid #d32f2f;">
-    <div class="text-center mb-4">
-        <h2 class="fw-bold text-danger">⚠️ ¿Confirmar Eliminación?</h2>
-        <p class="text-muted">Estás a punto de eliminar el riesgo: <strong>{{ risk.descripcion }}</strong></p>
+<section class="page-card">
+    <div class="alert alert-danger" role="alert">
+        Se eliminara el riesgo <strong>{{ risk.description }}</strong> del proyecto <strong>{{ risk.project.name }}</strong>.
     </div>
-    <form method="post">
+    <form method="post" class="page-actions justify-content-end mt-4">
         {% csrf_token %}
-        <div class="d-flex justify-content-center gap-3">
-            <button type="submit" class="btn btn-danger fw-bold rounded-pill px-4">Sí, Eliminar</button>
-            <a href="{% url 'risks:risk_list' %}" class="btn btn-secondary fw-bold rounded-pill px-4">Cancelar</a>
-        </div>
+        <a href="{% url 'risks:risk_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">Eliminar riesgo</button>
     </form>
-</div>
+</section>
 {% endblock %}

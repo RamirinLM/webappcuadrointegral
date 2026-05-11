@@ -1,0 +1,353 @@
+<div class="alert alert-info mb-4">
+    <strong>Cronograma de actividades</strong><br>
+    Define las actividades del proyecto y los recursos necesarios para cada una.
+    {% if project_start_date and project_end_date %}
+    <br><small class="text-muted">El proyecto va del <strong>{{ project_start_date }}</strong> al <strong>{{ project_end_date }}</strong>. Las actividades deben estar dentro de este rango.</small>
+    {% endif %}
+</div>
+
+<input type="hidden" name="activities" id="activities-input" value="[]">
+<input type="hidden" id="project-start-date" value="{{ project_start_date|default:'' }}">
+<input type="hidden" id="project-end-date" value="{{ project_end_date|default:'' }}">
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h6 class="mb-0">Nueva actividad</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre de la actividad *</label>
+                <input type="text" class="form-control" id="activity-name" placeholder="Ej: Analisis de requerimientos">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Costo estimado</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" class="form-control" id="activity-cost" step="0.01" min="0" placeholder="0.00">
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripcion</label>
+            <textarea class="form-control" id="activity-description" rows="2" placeholder="Describe la actividad"></textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha de inicio</label>
+                <input type="date" class="form-control" id="activity-start">
+                <div id="activity-start-error" class="text-danger small mt-1"></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Fecha de fin</label>
+                <input type="date" class="form-control" id="activity-end">
+                <div id="activity-end-error" class="text-danger small mt-1"></div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Predecesora</label>
+                <select class="form-select" id="activity-predecessor">
+                    <option value="">Sin predecesora</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6 class="card-title">Recursos de la actividad</h6>
+                <input type="hidden" id="current-resources" value="[]">
+
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <input type="text" class="form-control form-control-sm" id="resource-name" placeholder="Nombre del recurso">
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <select class="form-select form-select-sm" id="resource-type">
+                            <option value="human">Humano</option>
+                            <option value="material">Material</option>
+                            <option value="equipment">Equipo</option>
+                            <option value="financial">Financiero</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <input type="number" class="form-control form-control-sm" id="resource-quantity" placeholder="Cant." min="1" value="1">
+                    </div>
+                    <div class="col-md-2 mb-2">
+                        <input type="number" class="form-control form-control-sm" id="resource-cost" placeholder="Costo/U" step="0.01" min="0">
+                    </div>
+                    <div class="col-md-1 mb-2">
+                        <button type="button" class="btn btn-success btn-sm w-100" onclick="addResourceToActivity()">+</button>
+                    </div>
+                </div>
+
+                <div id="current-resources-list" class="mt-2 small"></div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-primary" onclick="addActivity()">Agregar actividad</button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">Actividades del proyecto</h6>
+    </div>
+    <div class="card-body">
+        <div id="activities-list">
+            <p class="text-muted text-center">No hay actividades agregadas</p>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-4">
+                <h6 class="text-muted">Total actividades</h6>
+                <h3 id="total-activities">0</h3>
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-muted">Costo total</h6>
+                <h3 id="total-cost">$0.00</h3>
+            </div>
+            <div class="col-md-4">
+                <h6 class="text-muted">Duracion estimada</h6>
+                <h3 id="total-duration">0 dias</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var activities_data = {{ activities|escapejs }};
+let activities = activities_data || [];
+
+if (activities.length > 0) {
+    updateActivitiesList();
+    updatePredecessorSelect();
+    updateSummary();
+}
+
+let currentResources = [];
+let projectStartDate = '';
+let projectEndDate = '';
+
+document.addEventListener('DOMContentLoaded', function() {
+    projectStartDate = document.getElementById('project-start-date').value;
+    projectEndDate = document.getElementById('project-end-date').value;
+
+    const activityStart = document.getElementById('activity-start');
+    const activityEnd = document.getElementById('activity-end');
+
+    if (projectStartDate) {
+        activityStart.min = projectStartDate;
+        activityEnd.min = projectStartDate;
+    }
+    if (projectEndDate) {
+        activityStart.max = projectEndDate;
+        activityEnd.max = projectEndDate;
+    }
+
+    activityStart.addEventListener('change', validateActivityDates);
+    activityEnd.addEventListener('change', validateActivityDates);
+});
+
+function validateActivityDates() {
+    const startInput = document.getElementById('activity-start');
+    const endInput = document.getElementById('activity-end');
+    const startError = document.getElementById('activity-start-error');
+    const endError = document.getElementById('activity-end-error');
+
+    const start = startInput.value;
+    const end = endInput.value;
+
+    startError.textContent = '';
+    endError.textContent = '';
+    startInput.classList.remove('is-invalid');
+    endInput.classList.remove('is-invalid');
+
+    let hasError = false;
+
+    if (start && end && start > end) {
+        endInput.classList.add('is-invalid');
+        endError.textContent = 'La fecha de fin no puede ser anterior a la de inicio.';
+        hasError = true;
+    }
+
+    if (projectStartDate && start && start < projectStartDate) {
+        startInput.classList.add('is-invalid');
+        startError.textContent = 'No puede ser anterior al inicio del proyecto (' + projectStartDate + ').';
+        hasError = true;
+    }
+
+    if (projectEndDate && end && end > projectEndDate) {
+        endInput.classList.add('is-invalid');
+        endError.textContent = 'No puede ser posterior al fin del proyecto (' + projectEndDate + ').';
+        hasError = true;
+    }
+
+    if (start) {
+        endInput.min = start > projectStartDate ? start : projectStartDate;
+    }
+
+    return !hasError;
+}
+
+function addResourceToActivity() {
+    const name = document.getElementById('resource-name').value;
+    if (!name) {
+        alert('Ingresa el nombre del recurso.');
+        return;
+    }
+
+    const resource = {
+        id: 'res_' + Date.now(),
+        name: name,
+        type: document.getElementById('resource-type').value,
+        quantity: parseInt(document.getElementById('resource-quantity').value) || 1,
+        cost_per_unit: parseFloat(document.getElementById('resource-cost').value) || 0
+    };
+
+    currentResources.push(resource);
+    updateCurrentResourcesList();
+    document.getElementById('resource-name').value = '';
+    document.getElementById('resource-quantity').value = '1';
+    document.getElementById('resource-cost').value = '';
+}
+
+function removeCurrentResource(id) {
+    currentResources = currentResources.filter(r => r.id !== id);
+    updateCurrentResourcesList();
+}
+
+function updateCurrentResourcesList() {
+    const list = document.getElementById('current-resources-list');
+    const typeLabels = { human: 'Humano', material: 'Material', equipment: 'Equipo', financial: 'Financiero' };
+
+    if (currentResources.length === 0) {
+        list.innerHTML = '';
+        return;
+    }
+
+    list.innerHTML = currentResources.map(r => `
+        <span class="badge bg-secondary me-1 mb-1">
+            ${typeLabels[r.type]}: ${r.name} (${r.quantity} x $${r.cost_per_unit})
+            <button type="button" class="btn-close btn-close-white ms-1" style="font-size:0.6rem;" onclick="removeCurrentResource('${r.id}')"></button>
+        </span>
+    `).join('');
+}
+
+function addActivity() {
+    const name = document.getElementById('activity-name').value;
+    if (!name) {
+        alert('Ingresa el nombre de la actividad.');
+        return;
+    }
+
+    if (!validateActivityDates()) {
+        alert('Por favor corrige las fechas antes de continuar.');
+        return;
+    }
+
+    const activity = {
+        id: 'act_' + Date.now(),
+        name: name,
+        description: document.getElementById('activity-description').value,
+        start_date: document.getElementById('activity-start').value,
+        end_date: document.getElementById('activity-end').value,
+        cost: parseFloat(document.getElementById('activity-cost').value) || 0,
+        predecessor: document.getElementById('activity-predecessor').value,
+        resources: [...currentResources]
+    };
+
+    activities.push(activity);
+    updateActivitiesList();
+    updatePredecessorSelect();
+    updateSummary();
+    clearActivityForm();
+}
+
+function removeActivity(id) {
+    activities = activities.filter(a => a.id !== id);
+    updateActivitiesList();
+    updatePredecessorSelect();
+    updateSummary();
+}
+
+function updateActivitiesList() {
+    const list = document.getElementById('activities-list');
+    const input = document.getElementById('activities-input');
+    input.value = JSON.stringify(activities);
+
+    if (activities.length === 0) {
+        list.innerHTML = '<p class="text-muted text-center">No hay actividades agregadas</p>';
+        return;
+    }
+
+    const typeLabels = { human: 'Humano', material: 'Material', equipment: 'Equipo', financial: 'Financiero' };
+
+    list.innerHTML = activities.map((a, index) => `
+        <div class="dynamic-item">
+            <div class="item-info">
+                <div class="item-title"><span class="badge bg-primary me-2">${index + 1}</span>${a.name}</div>
+                <div class="item-details">
+                    ${a.start_date ? a.start_date : ''}${a.end_date ? ' -> ' + a.end_date : ''}${a.cost ? ' | $' + a.cost : ''}
+                    ${a.resources.length > 0 ? '<br>Recursos: ' + a.resources.map(r => `<span class="badge bg-light text-dark me-1">${typeLabels[r.type]} ${r.name}</span>`).join('') : ''}
+                </div>
+            </div>
+            <button type="button" class="btn-remove" onclick="removeActivity('${a.id}')">x</button>
+        </div>
+    `).join('');
+}
+
+function updatePredecessorSelect() {
+    const select = document.getElementById('activity-predecessor');
+    select.innerHTML = '<option value="">Sin predecesora</option>' + activities.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+function updateSummary() {
+    document.getElementById('total-activities').textContent = activities.length;
+
+    const totalCost = activities.reduce((sum, a) => {
+        const activityCost = parseFloat(a.cost) || 0;
+        const resourcesCost = a.resources.reduce((rsum, r) => rsum + (r.quantity * r.cost_per_unit), 0);
+        return sum + activityCost + resourcesCost;
+    }, 0);
+    document.getElementById('total-cost').textContent = '$' + totalCost.toFixed(2);
+
+    const dates = activities.filter(a => a.start_date && a.end_date).flatMap(a => [new Date(a.start_date), new Date(a.end_date)]);
+    if (dates.length > 0) {
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+        const days = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+        document.getElementById('total-duration').textContent = days + ' dias';
+    } else {
+        document.getElementById('total-duration').textContent = '0 dias';
+    }
+}
+
+function clearActivityForm() {
+    document.getElementById('activity-name').value = '';
+    document.getElementById('activity-description').value = '';
+    document.getElementById('activity-start').value = '';
+    document.getElementById('activity-end').value = '';
+    document.getElementById('activity-cost').value = '';
+    document.getElementById('activity-predecessor').value = '';
+    currentResources = [];
+    updateCurrentResourcesList();
+
+    const activityStart = document.getElementById('activity-start');
+    const activityEnd = document.getElementById('activity-end');
+    if (projectStartDate) {
+        activityStart.min = projectStartDate;
+        activityEnd.min = projectStartDate;
+    }
+    if (projectEndDate) {
+        activityStart.max = projectEndDate;
+        activityEnd.max = projectEndDate;
+    }
+}
+</script>

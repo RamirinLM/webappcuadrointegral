@@ -1,0 +1,194 @@
+<div class="alert alert-info mb-4">
+    <strong>Identificacion de interesados</strong><br>
+    Selecciona interesados existentes o registra nuevos para el proyecto.
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h6 class="mb-0">Matriz de poder e interes</h6>
+    </div>
+    <div class="card-body">
+        <div class="stakeholder-matrix">
+            <div class="matrix-cell matrix-high-high"><strong>Alto / Alto</strong><br><small>Gestionar estrechamente</small></div>
+            <div class="matrix-cell matrix-high-medium"><strong>Alto / Medio</strong><br><small>Mantener satisfecho</small></div>
+            <div class="matrix-cell matrix-high-low"><strong>Alto / Bajo</strong><br><small>Mantener informado</small></div>
+            <div class="matrix-cell matrix-medium-high"><strong>Medio / Alto</strong><br><small>Gestionar estrechamente</small></div>
+            <div class="matrix-cell matrix-medium-medium"><strong>Medio / Medio</strong><br><small>Monitorear</small></div>
+            <div class="matrix-cell matrix-medium-low"><strong>Medio / Bajo</strong><br><small>Monitorear</small></div>
+            <div class="matrix-cell matrix-low-high"><strong>Bajo / Alto</strong><br><small>Mantener informado</small></div>
+            <div class="matrix-cell matrix-low-medium"><strong>Bajo / Medio</strong><br><small>Monitorear</small></div>
+            <div class="matrix-cell matrix-low-low"><strong>Bajo / Bajo</strong><br><small>Observar</small></div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" name="has_stakeholders" id="has-stakeholders" value="">
+<input type="hidden" name="new_stakeholders" id="new-stakeholders-input" value="[]">
+
+<h5 class="mb-3">Interesados existentes</h5>
+{% if stakeholders %}
+<div class="row mb-4">
+    {% for stakeholder in stakeholders %}
+    <div class="col-md-6 col-lg-4 mb-3">
+        <label class="stakeholder-card {% if stakeholder.id|stringformat:'s' in selected_ids %}selected{% endif %}">
+            <div class="d-flex align-items-start">
+                <input type="checkbox" name="stakeholders" value="{{ stakeholder.id }}" {% if stakeholder.id|stringformat:'s' in selected_ids %}checked{% endif %} class="me-2 mt-1 stakeholder-checkbox" onchange="updateHasStakeholders()">
+                <div>
+                    <strong>{{ stakeholder.name }}</strong><br>
+                    <small class="text-muted">{{ stakeholder.get_role_display }}</small><br>
+                    <span class="badge bg-info">{{ stakeholder.get_interest_level_display }}</span>
+                    <span class="badge bg-warning text-dark">{{ stakeholder.get_power_level_display }}</span>
+                </div>
+            </div>
+        </label>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-warning mb-4">No hay interesados registrados. Puedes agregar nuevos interesados abajo.</div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">Agregar nuevo interesado</h6>
+    </div>
+    <div class="card-body">
+        <div id="new-stakeholder-form">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Nombre *</label>
+                    <input type="text" class="form-control" id="stakeholder-name">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Email *</label>
+                    <input type="email" class="form-control" id="stakeholder-email">
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Rol</label>
+                    <select class="form-select" id="stakeholder-role">
+                        <option value="manager">Gerente de proyecto</option>
+                        <option value="team_member">Miembro del equipo</option>
+                        <option value="client">Cliente</option>
+                        <option value="sponsor">Patrocinador</option>
+                        <option value="other">Otro</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Nivel de interes</label>
+                    <select class="form-select" id="stakeholder-interest">
+                        <option value="low">Bajo</option>
+                        <option value="medium" selected>Medio</option>
+                        <option value="high">Alto</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Nivel de poder</label>
+                    <select class="form-select" id="stakeholder-power">
+                        <option value="low">Bajo</option>
+                        <option value="medium" selected>Medio</option>
+                        <option value="high">Alto</option>
+                    </select>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Informacion de contacto</label>
+                <textarea class="form-control" id="stakeholder-contact" rows="2"></textarea>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="addStakeholder()">Agregar interesado</button>
+        </div>
+
+        <div id="new-stakeholders-list" class="mt-4"></div>
+    </div>
+</div>
+
+<div class="alert alert-light mt-3">
+    <small>Puedes continuar sin interesados y agregarlos despues si lo prefieres.</small>
+</div>
+
+<script>
+let newStakeholders = [];
+
+function updateHasStakeholders() {
+    const checkboxes = document.querySelectorAll('.stakeholder-checkbox:checked');
+    const hasStakeholders = document.getElementById('has-stakeholders');
+    hasStakeholders.value = (checkboxes.length > 0 || newStakeholders.length > 0) ? 'yes' : '';
+}
+
+function addStakeholder() {
+    const name = document.getElementById('stakeholder-name').value;
+    const email = document.getElementById('stakeholder-email').value;
+
+    if (!name || !email) {
+        alert('Completa los campos obligatorios.');
+        return;
+    }
+
+    const stakeholder = {
+        id: 'new_' + Date.now(),
+        name: name,
+        email: email,
+        role: document.getElementById('stakeholder-role').value,
+        interest_level: document.getElementById('stakeholder-interest').value,
+        power_level: document.getElementById('stakeholder-power').value,
+        contact_info: document.getElementById('stakeholder-contact').value
+    };
+
+    newStakeholders.push(stakeholder);
+    updateStakeholdersList();
+    updateHasStakeholders();
+    clearStakeholderForm();
+}
+
+function removeStakeholder(id) {
+    newStakeholders = newStakeholders.filter(s => s.id !== id);
+    updateStakeholdersList();
+    updateHasStakeholders();
+}
+
+function updateStakeholdersList() {
+    const list = document.getElementById('new-stakeholders-list');
+    const input = document.getElementById('new-stakeholders-input');
+    input.value = JSON.stringify(newStakeholders);
+
+    if (newStakeholders.length === 0) {
+        list.innerHTML = '';
+        return;
+    }
+
+    const roleLabels = {
+        manager: 'Gerente de proyecto',
+        team_member: 'Miembro del equipo',
+        client: 'Cliente',
+        sponsor: 'Patrocinador',
+        other: 'Otro'
+    };
+
+    const levelLabels = { low: 'Bajo', medium: 'Medio', high: 'Alto' };
+
+    list.innerHTML = '<h6 class="mb-3">Nuevos interesados</h6>' + newStakeholders.map(s => `
+        <div class="dynamic-item">
+            <div class="item-info">
+                <div class="item-title">${s.name}</div>
+                <div class="item-details">
+                    ${s.email} | ${roleLabels[s.role]} |
+                    <span class="badge bg-info">${levelLabels[s.interest_level]}</span>
+                    <span class="badge bg-warning text-dark">${levelLabels[s.power_level]}</span>
+                </div>
+            </div>
+            <button type="button" class="btn-remove" onclick="removeStakeholder('${s.id}')">x</button>
+        </div>
+    `).join('');
+}
+
+function clearStakeholderForm() {
+    document.getElementById('stakeholder-name').value = '';
+    document.getElementById('stakeholder-email').value = '';
+    document.getElementById('stakeholder-contact').value = '';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateHasStakeholders();
+});
+</script>

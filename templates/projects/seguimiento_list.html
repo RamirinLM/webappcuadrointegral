@@ -1,45 +1,110 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Seguimiento CMI{% endblock %}
+{% block title %}Seguimiento{% endblock %}
+{% block page_heading %}Seguimiento de proyectos{% endblock %}
+{% block page_summary %}Accede a la linea base de cada proyecto para registrar seguimiento por actividad, o crea un reporte rapido.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-5 shadow-lg rounded" style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);">
-    <h1 class="mb-4 fw-bold text-center" style="color:#004c99; text-transform:uppercase;">
-        Seguimiento de Proyectos
-    </h1>
-
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm rounded text-center" style="background-color: white;">
-            <thead style="background-color:#ffd600; color:#000; font-weight:700;">
-                <tr>
-                    <th>Proyecto</th>
-                    <th>Estado Actual</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for proyecto in proyectos %}
-                <tr>
-                    <td class="fw-semibold">{{ proyecto.name }}</td>
-                    <td>
-                        <span class="badge bg-info text-dark rounded-pill">
-                            {{ proyecto.get_status_display }}
-                        </span>
-                    </td>
-                    <td>
-                        <a href="{% url 'seguimiento_create' proyecto.id %}" class="btn btn-sm btn-primary rounded-pill">
-                            ➕ Crear Reporte
-                        </a>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="3" class="py-4 text-muted">No hay proyectos registrados.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<section class="page-card mb-4">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Proyectos disponibles</h2>
+            <p class="text-muted mb-0">Selecciona un proyecto para ir a su linea base y registrar el seguimiento.</p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
     </div>
-</div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Proyecto</th>
+                        <th>Fechas</th>
+                        <th>Estado</th>
+                        <th>Accion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for proyecto in proyectos %}
+                    <tr>
+                        <td>
+                            <strong>{{ proyecto.name }}</strong>
+                        </td>
+                        <td class="small">{{ proyecto.start_date|date:"d/m/Y" }} — {{ proyecto.end_date|date:"d/m/Y" }}</td>
+                        <td><span class="status-chip">{{ proyecto.get_status_display }}</span></td>
+                        <td class="text-nowrap">
+                            <a href="{% url 'linea_base_seguimiento' proyecto.id %}" class="btn btn-sm btn-primary">
+                                Linea base y seguimiento
+                            </a>
+                            <a href="{% url 'seguimiento_create' proyecto.id %}" class="btn btn-sm btn-outline-secondary">
+                                Reporte rapido
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="empty-state">No hay proyectos registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+{% if seguimientos %}
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Historial de seguimientos</h2>
+            <p class="text-muted mb-0">Registros de seguimiento existentes ordenados por fecha.</p>
+        </div>
+    </div>
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Proyecto</th>
+                        <th>Fecha</th>
+                        <th>PV</th>
+                        <th>EV</th>
+                        <th>AC</th>
+                        <th>SV</th>
+                        <th>CV</th>
+                        <th>CPI</th>
+                        <th>SPI</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for seg in seguimientos %}
+                    <tr>
+                        <td><strong>{{ seg.proyecto.name }}</strong></td>
+                        <td>{{ seg.fecha|date:"d/m/Y" }}</td>
+                        <td>${{ seg.pv|floatformat:2 }}</td>
+                        <td>${{ seg.ev|floatformat:2 }}</td>
+                        <td>${{ seg.ac|floatformat:2 }}</td>
+                        <td class="{% if seg.sv < 0 %}text-danger{% elif seg.sv > 0 %}text-success{% endif %} fw-bold">
+                            ${{ seg.sv|floatformat:2 }}
+                        </td>
+                        <td class="{% if seg.cv < 0 %}text-danger{% elif seg.cv > 0 %}text-success{% endif %} fw-bold">
+                            ${{ seg.cv|floatformat:2 }}
+                        </td>
+                        <td>{{ seg.cpi|floatformat:2 }}</td>
+                        <td>{{ seg.spi|floatformat:2 }}</td>
+                        <td>
+                            <a href="{% url 'linea_base_seguimiento' seg.proyecto.pk %}" class="btn btn-sm btn-outline-primary">Ver</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="10" class="empty-state">Aun no hay seguimientos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

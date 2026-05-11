@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block title %}Sincronizacion pendiente{% endblock %}
+{% block page_heading %}Mantenimiento requerido{% endblock %}
+{% block page_summary %}La aplicacion detecto una diferencia entre el codigo y la base de datos.{% endblock %}
+
+{% block content %}
+<section class="content-card p-4 p-lg-5">
+    <div class="row g-4 align-items-center">
+        <div class="col-lg-8">
+            <h2 class="h3 mb-3">No se puede completar esta accion todavia.</h2>
+            <p class="mb-3">{{ error_summary }}</p>
+            <p class="text-muted mb-0">Ruta afectada: <code>{{ requested_path }}</code></p>
+        </div>
+        <div class="col-lg-4">
+            <div class="alert alert-warning mb-0" role="alert">
+                <strong>Siguiente paso recomendado:</strong> ejecutar las migraciones pendientes y volver a cargar la pagina.
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

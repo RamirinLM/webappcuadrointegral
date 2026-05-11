@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Aprobar proyecto{% endblock %}
+{% block page_heading %}Aprobacion de proyecto{% endblock %}
+{% block page_summary %}Revisa datos principales del proyecto antes de aprobarlo o rechazarlo.{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <div class="form-section mb-4">
+        <h2 class="section-title">{{ project.name }}</h2>
+        <p class="text-muted">{{ project.description|truncatechars:150 }}</p>
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Estado actual</dt>
+            <dd class="col-sm-8">{{ project.get_status_display }}</dd>
+            <dt class="col-sm-4">Creado por</dt>
+            <dd class="col-sm-8">{{ project.created_by.get_full_name|default:project.created_by.username }}</dd>
+            <dt class="col-sm-4">Inicio</dt>
+            <dd class="col-sm-8">{{ project.start_date|date:"d/m/Y" }}</dd>
+            <dt class="col-sm-4">Fin</dt>
+            <dd class="col-sm-8">{{ project.end_date|date:"d/m/Y" }}</dd>
+            <dt class="col-sm-4">Presupuesto</dt>
+            <dd class="col-sm-8">${{ project.budget|floatformat:2|default:"0.00" }}</dd>
+        </dl>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <p class="fw-semibold mb-4">Selecciona la decision para este proyecto.</p>
+        <div class="page-actions justify-content-end">
+            <a href="{% url 'project_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" name="action" value="reject" class="btn btn-outline-danger">Rechazar</button>
+            <button type="submit" name="action" value="approve" class="btn btn-primary">Aprobar proyecto</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

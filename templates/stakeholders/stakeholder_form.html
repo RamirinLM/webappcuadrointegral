@@ -1,60 +1,66 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}
-    {% if form.instance.pk %}Editar Interesado{% else %}Crear Interesado{% endif %}
-{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar interesado{% else %}Crear interesado{% endif %}{% endblock %}
+{% block page_heading %}{% if form.instance.pk %}Editar interesado{% else %}Crear interesado{% endif %}{% endblock %}
+{% block page_summary %}Registra la informacion de contacto, nivel de interes y proyectos asociados del interesado.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-4 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:700px;">
-
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/stakeholder_logo.png' %}"  
-             alt="Interesado"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:100px;">
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Ficha del interesado</h2>
+            <p class="text-muted mb-0">Completa los datos de contacto y la relacion del interesado con los proyectos visibles para el usuario.</p>
+        </div>
+        <span class="status-chip">{% if form.instance.pk %}Edicion{% else %}Nuevo registro{% endif %}</span>
     </div>
 
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        {% if form.instance.pk %}Editar Interesado{% else %}Crear Interesado{% endif %}
-    </h1>
-
-    <form method="post" class="needs-validation text-start">
+    <form method="post" novalidate>
         {% csrf_token %}
-        <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light">
-            {% for field in form %}
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
-                    </div>
-                    <div class="col-sm-9">
-                        {{ field }}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="form-section">
+                    <h3 class="section-title">Informacion principal</h3>
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'projects' or field.name == 'contact_info' %}col-12{% else %}col-md-6{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+
+            <div class="col-lg-4">
+                <div class="form-section h-100">
+                    <h3 class="section-title">Recomendaciones</h3>
+                    <ul class="small mb-0 ps-3">
+                        <li>Usa un correo valido para facilitar seguimiento y feedback.</li>
+                        <li>Asocia al menos un proyecto para mantener visibilidad y permisos coherentes.</li>
+                        <li>Describe en contacto la via preferida: telefono, correo o canal interno.</li>
+                        <li>Revisa interes e influencia para priorizar comunicaciones.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex justify-content-center gap-3 mt-4">
-            <a href="javascript:history.back()" 
-               class="btn fw-bold px-4 shadow-sm rounded-pill" 
-               style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
-                ⬅️ Regresar
-            </a>
-
-            <button type="submit"  
-                    class="btn fw-bold px-4 shadow-sm rounded-pill"  
-                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-                Guardar
-            </button>
-
-            <a href="{% url 'stakeholders:stakeholder_list' %}"  
-               class="btn fw-semibold px-4 shadow-sm rounded-pill"  
-               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-                Cancelar
-            </a>
+        <div class="page-actions justify-content-end mt-4">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
+            <a href="{% url 'stakeholders:stakeholder_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar interesado</button>
         </div>
     </form>
-</div>
+</section>
 {% endblock %}

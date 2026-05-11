@@ -1,81 +1,55 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Asignar Responsable - {{ activity.name }}{% endblock %}
+{% block title %}Asignar responsables{% endblock %}
+{% block page_heading %}Asignar responsables{% endblock %}
+{% block page_summary %}Gestiona responsables y horas asignadas para la actividad {{ activity.name }}.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-5 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);
-            font-family:'Segoe UI','Helvetica Neue',sans-serif;
-            max-width:700px;">
-
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        👥 Asignar Responsable
-    </h1>
-    
-    <div class="text-center mb-4">
-        <span class="badge bg-info fs-6">{{ activity.name }}</span>
-        <p class="text-muted mt-2">{{ activity.project.name }}</p>
-    </div>
-
-    <!-- Existing Assignments -->
-    {% if existing_assignments %}
-    <div class="mb-4 p-3 bg-white rounded shadow-sm">
-        <h5 class="mb-3">Responsables Actuales</h5>
-        <ul class="list-group list-group-flush">
-            {% for assignment in existing_assignments %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
+<div class="row g-4">
+    <div class="col-12 col-lg-5">
+        <section class="page-card h-100">
+            <h2 class="section-title">Responsables actuales</h2>
+            <p class="text-muted">Proyecto: {{ activity.project.name }}</p>
+            <div class="list-group list-group-flush">
+                {% for assignment in existing_assignments %}
+                <div class="list-group-item px-0">
                     <strong>{{ assignment.user.get_full_name|default:assignment.user.username }}</strong>
-                    <br><small class="text-muted">{{ assignment.get_role_display }}</small>
+                    <div class="small text-muted">{{ assignment.get_role_display }} | {{ assignment.hours_assigned }}h</div>
                 </div>
-                <div class="text-end">
-                    <span class="badge bg-secondary">{{ assignment.hours_assigned }}h</span>
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
+                {% empty %}
+                <div class="empty-state py-3">La actividad todavia no tiene responsables asignados.</div>
+                {% endfor %}
+            </div>
+        </section>
     </div>
-    {% endif %}
 
-    <!-- Form -->
-    <form method="post" class="needs-validation text-start">
-        {% csrf_token %}
-        <div class="p-4 bg-white rounded shadow-sm mb-4 border border-light">
-            {% for field in form %}
-            <div class="row mb-3">
-                <div class="col-sm-4">
-                    <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
-                </div>
-                <div class="col-sm-8">
+    <div class="col-12 col-lg-7">
+        <section class="page-card h-100">
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% for field in form %}
+                <div class="mb-3">
+                    <label for="{{ field.id_for_label }}" class="form-label fw-semibold">{{ field.label }}</label>
                     {{ field }}
                     {% if field.help_text %}
-                        <small class="text-muted">{{ field.help_text }}</small>
+                    <div class="form-text">{{ field.help_text }}</div>
+                    {% endif %}
+                    {% if field.errors %}
+                    <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
                     {% endif %}
                 </div>
-            </div>
-            {% endfor %}
-        </div>
+                {% endfor %}
 
-        <!-- Buttons -->
-        <div class="d-flex justify-content-center gap-4 mt-4 flex-wrap">
-            <button type="submit"  
-                    class="btn fw-bold px-5 py-2 shadow-sm rounded-pill"
-                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-                💾 Asignar
-            </button>
-            <a href="{% url 'activity_list' %}"  
-               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
-               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-                ❌ Cancelar
-            </a>
-            <a href="javascript:history.back()"  
-               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
-               style="background-color:#ccc; color:#000; border:2px solid #004c99;">
-                ⬅️ Regresar
-            </a>
-        </div>
-    </form>
+                <div class="page-actions justify-content-end mt-4">
+                    <a href="{% url 'activity_list' %}" class="btn btn-outline-secondary">Volver a actividades</a>
+                    <button type="submit" class="btn btn-primary">Guardar asignacion</button>
+                </div>
+            </form>
+        </section>
+    </div>
 </div>
 {% endblock %}

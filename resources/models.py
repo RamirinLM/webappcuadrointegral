@@ -22,7 +22,8 @@ class Resource(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.name} - {self.activity.name}"
+        activity_name = self.activity.name if self.activity else "Sin actividad"
+        return f"{self.name} - {activity_name}"
 
     class Meta:
         verbose_name = 'Recurso'

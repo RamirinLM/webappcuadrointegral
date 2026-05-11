@@ -1,18 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class Persona(models.Model):
-    nombre = models.CharField(max_length=200, verbose_name='Nombre')
-    apellido = models.CharField(max_length=200, verbose_name='Apellido')
-    email = models.EmailField(verbose_name='Correo Electrónico')
-    telefono = models.CharField(max_length=20, blank=True, verbose_name='Teléfono')
-
-    def __str__(self):
-        return f"{self.nombre} {self.apellido}"
-
-    class Meta:
-        verbose_name = 'Persona'
-        verbose_name_plural = 'Personas'
 
 class UserProfile(models.Model):
     ROLE_CHOICES = [
@@ -40,35 +28,73 @@ class Seguimiento(models.Model):
     pv = models.DecimalField(max_digits=10, decimal_places=2, editable=False, verbose_name='PV (Planned Value)', default=0)
     ev = models.DecimalField(max_digits=10, decimal_places=2, editable=False, verbose_name='EV (Earned Value)', default=0)
     ac = models.DecimalField(max_digits=10, decimal_places=2, editable=False, verbose_name='AC (Actual Cost)', default=0)
+    sv = models.DecimalField(max_digits=10, decimal_places=2, editable=False, verbose_name='SV (Schedule Variance)', default=0)
+    cv = models.DecimalField(max_digits=10, decimal_places=2, editable=False, verbose_name='CV (Cost Variance)', default=0)
     cpi = models.DecimalField(max_digits=5, decimal_places=2, editable=False, verbose_name='CPI (Cost Performance Index)', default=0)
     spi = models.DecimalField(max_digits=5, decimal_places=2, editable=False, verbose_name='SPI (Schedule Performance Index)', default=0)
 
     def calculate_metrics(self):
-        # PV: Planned Value - budgeted cost of work scheduled
-        # For simplicity, PV is the sum of costs of activities that should be completed by this date
-        from datetime import date
+        """
+        Calcula métricas EVM usando fechas reales de las actividades.
+        
+        PV (Planned Value):   Suma del costo planificado de actividades cuyo
+                              end_date planificado ≤ fecha del seguimiento.
+        EV (Earned Value):    Suma del costo planificado de actividades que
+                              YA se completaron (actual_end_date ≤ fecha).
+        AC (Actual Cost):     Suma del costo REAL de actividades completadas.
+                              Si no tiene actual_cost, usa el planificado.
+        SV (Schedule Variance):  EV - PV  (positivo = adelantado)
+        CV (Cost Variance):      EV - AC  (positivo = bajo presupuesto)
+        CPI:  EV / AC
+        SPI:  EV / PV
+        """
+        from decimal import Decimal
+        
         activities = self.proyecto.activity_set.all()
-        total_budget = sum(activity.cost or 0 for activity in activities)
-        completed_activities = activities.filter(end_date__lte=self.fecha)
-        pv = sum(activity.cost or 0 for activity in completed_activities)
-        self.pv = pv
-
-        # EV: Earned Value - budgeted cost of work performed
-        # Assuming completed activities are 100% earned
-        completed_activities_actual = activities.filter(status='completed')
-        ev = sum(activity.cost or 0 for activity in completed_activities_actual)
-        self.ev = ev
-
-        # AC: Actual Cost - actual cost incurred
-        # For simplicity, AC is the sum of costs of completed activities (assuming cost = actual cost)
-        ac = sum(activity.cost or 0 for activity in completed_activities_actual)
-        self.ac = ac
-
-        # CPI = EV / AC if AC > 0 else 0
-        self.cpi = self.ev / self.ac if self.ac > 0 else 0
-
-        # SPI = EV / PV if PV > 0 else 0
-        self.spi = self.ev / self.pv if self.pv > 0 else 0
+        
+        # PV: costo planificado de actividades cuyo fin PLANIFICADO es ≤ fecha de corte
+        pv_activities = activities.filter(end_date__lte=self.fecha)
+        self.pv = Decimal(sum(activity.cost or 0 for activity in pv_activities))
+        
+        # EV: costo PLANIFICADO de actividades COMPLETADAS (con fecha real ≤ fecha de corte)
+        # Si no tiene actual_end_date pero está completa, usa la planificada
+        ev_activities = activities.filter(
+            status='completed',
+            actual_end_date__lte=self.fecha
+        )
+        # También incluir actividades completadas sin actual_end_date
+        # cuyo end_date planificado ≤ fecha (fallback para compatibilidad)
+        ev_fallback = activities.filter(
+            status='completed',
+            actual_end_date__isnull=True,
+            end_date__lte=self.fecha
+        )
+        ev_set = ev_activities | ev_fallback
+        self.ev = Decimal(sum(a.cost or 0 for a in ev_set.distinct()))
+        
+        # AC: costo REAL de las actividades completadas (fallback a planificado si no hay real)
+        ac_total = Decimal('0')
+        for a in ev_set.distinct():
+            ac_total += Decimal(str(a.actual_cost)) if a.actual_cost is not None else Decimal(str(a.cost or 0))
+        self.ac = ac_total
+        
+        # SV = EV - PV
+        self.sv = self.ev - self.pv
+        
+        # CV = EV - AC
+        self.cv = self.ev - self.ac
+        
+        # CPI
+        if self.ac > 0:
+            self.cpi = self.ev / self.ac
+        else:
+            self.cpi = Decimal('0')
+        
+        # SPI
+        if self.pv > 0:
+            self.spi = self.ev / self.pv
+        else:
+            self.spi = Decimal('0')
 
     def save(self, *args, **kwargs):
         self.calculate_metrics()
@@ -91,6 +117,10 @@ class Cronograma(models.Model):
     class Meta:
         verbose_name = 'Cronograma'
         verbose_name_plural = 'Cronogramas'
+        managed = False
+
+    def __str__(self):
+        return f"{self.actividad.name} - {self.proyecto.name}"
 
 class Presupuesto(models.Model):
     proyecto = models.OneToOneField('Project', on_delete=models.CASCADE, verbose_name='Proyecto')
@@ -126,7 +156,7 @@ class ActaConstitucion(models.Model):
 
 class Comunicacion(models.Model):
     proyecto = models.ForeignKey('Project', on_delete=models.CASCADE, verbose_name='Proyecto')
-    interesado = models.ForeignKey('stakeholders.Stakeholder', on_delete=models.CASCADE, verbose_name='Interesado')
+    interesado = models.ForeignKey('stakeholders.Stakeholder', on_delete=models.CASCADE, verbose_name='Interesado', null=True, blank=True)
     fecha = models.DateTimeField(auto_now_add=True, verbose_name='Fecha')
     mensaje = models.TextField(verbose_name='Mensaje')
     tipo = models.CharField(max_length=50, choices=[('email', 'Email'), ('reunion', 'Reunión'), ('llamada', 'Llamada')], verbose_name='Tipo')
@@ -153,10 +183,13 @@ class Notification(models.Model):
         ('general', 'General'),
     ]
     project = models.ForeignKey('Project', on_delete=models.CASCADE, verbose_name='Proyecto')
+    recipient = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='project_notifications', verbose_name='Destinatario')
     alert_type = models.CharField(max_length=20, choices=ALERT_TYPES, verbose_name='Tipo de Alerta')
     message = models.TextField(verbose_name='Mensaje')
     sent = models.BooleanField(default=False, verbose_name='Enviado')
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name='Leído en')
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.alert_type} - {self.project.name}"
@@ -297,27 +330,24 @@ class Project(models.Model):
 
     def get_traffic_light_status(self):
         """
-        Calcula el estado del semáforo CMI basado en SPI y CPI.
+        Calcula el estado del semaforo CMI basado en SPI y CPI.
         Verde: SPI >= 0.95 y CPI >= 0.95
         Amarillo: SPI >= 0.85 y CPI >= 0.85
         Rojo: Cualquier otro caso
         """
-        try:
-            latest_seguimiento = self.seguimiento_set.first()
-            if not latest_seguimiento:
-                return 'gray'  # Sin datos
-            
-            spi = latest_seguimiento.spi or 0
-            cpi = latest_seguimiento.cpi or 0
-            
-            if spi >= 0.95 and cpi >= 0.95:
-                return 'green'
-            elif spi >= 0.85 and cpi >= 0.85:
-                return 'yellow'
-            else:
-                return 'red'
-        except:
+        latest_seguimiento = self.seguimiento_set.order_by('-fecha').first()
+        if not latest_seguimiento:
             return 'gray'
+        
+        spi = float(latest_seguimiento.spi or 0)
+        cpi = float(latest_seguimiento.cpi or 0)
+        
+        if spi >= 0.95 and cpi >= 0.95:
+            return 'green'
+        elif spi >= 0.85 and cpi >= 0.85:
+            return 'yellow'
+        else:
+            return 'red'
 
     def get_progress_percentage(self):
         """Calcula el porcentaje de avance del proyecto basado en actividades completadas"""
@@ -376,11 +406,17 @@ class Activity(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, verbose_name='Proyecto')
     name = models.CharField(max_length=200, verbose_name='Nombre')
     description = models.TextField(verbose_name='Descripción')
-    start_date = models.DateField(verbose_name='Fecha de Inicio')
-    end_date = models.DateField(verbose_name='Fecha de Fin')
+    # ── Fechas planificadas (línea base) ──
+    start_date = models.DateField(verbose_name='Fecha de Inicio Planificada')
+    end_date = models.DateField(verbose_name='Fecha de Fin Planificada')
+    # ── Fechas reales (seguimiento) ──
+    actual_start_date = models.DateField(null=True, blank=True, verbose_name='Fecha de Inicio Real')
+    actual_end_date = models.DateField(null=True, blank=True, verbose_name='Fecha de Fin Real')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='Estado')
     assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, verbose_name='Asignado A')
-    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Costo')
+    # ── Costos ──
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Costo Planificado')
+    actual_cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name='Costo Real')
     time_estimate = models.PositiveIntegerField(help_text="Horas estimadas", null=True, blank=True, verbose_name='Estimación de Tiempo')
     predecessor = models.ForeignKey(
         'self',
@@ -418,6 +454,19 @@ class Activity(models.Model):
             if self.start_date > self.end_date:
                 errors['start_date'] = 'La fecha de inicio no puede ser posterior a la fecha de fin'
 
+        # Validación 2b: Fechas reales dentro del rango del proyecto
+        if self.actual_start_date and self.project and self.project.start_date:
+            if self.actual_start_date < self.project.start_date:
+                errors['actual_start_date'] = f'La fecha de inicio real no puede ser anterior al inicio del proyecto ({self.project.start_date.strftime("%d/%m/%Y")})'
+
+        if self.actual_end_date and self.project and self.project.end_date:
+            if self.actual_end_date > self.project.end_date:
+                errors['actual_end_date'] = f'La fecha de fin real no puede ser posterior al fin del proyecto ({self.project.end_date.strftime("%d/%m/%Y")})'
+
+        if self.actual_start_date and self.actual_end_date:
+            if self.actual_start_date > self.actual_end_date:
+                errors['actual_start_date'] = 'La fecha de inicio real no puede ser posterior a la fecha de fin real'
+
         # Validación 3: Costo dentro del presupuesto disponible
         if self.cost and self.project and self.project.budget:
             total_activities_cost = Activity.objects.filter(
@@ -453,8 +502,9 @@ class Activity(models.Model):
         
         # Notificaciones de costo elevado
         if self.cost and self.cost > 10000:
-            Notification.objects.create(
+            Notification.objects.get_or_create(
                 project=self.project,
+                recipient=self.project.created_by,
                 alert_type='cost',
                 message=f'Costo de actividad elevado: {self.name} - ${self.cost}'
             )
@@ -463,11 +513,146 @@ class Activity(models.Model):
         from datetime import date
         today = date.today()
         if self.end_date and self.end_date < today and self.status != 'completed':
-            Notification.objects.create(
+            Notification.objects.get_or_create(
                 project=self.project,
+                recipient=self.project.created_by,
                 alert_type='schedule',
                 message=f'Desviación en cronograma: {self.name} - Fecha límite {self.end_date}'
             )
+
+    # ── Escenario de seguimiento ─────────────────────────────────────────
+
+    @property
+    def tracking_scenario(self):
+        """
+        Clasifica el escenario de seguimiento segun fechas planificadas vs reales.
+        Retorna un dict: {'code': str, 'label': str, 'color': str, 'detail': str}
+        """
+        from datetime import date as dt_date
+        p_start = self.start_date
+        p_end = self.end_date
+        a_start = self.actual_start_date
+        a_end = self.actual_end_date
+
+        if not a_start and not a_end:
+            return {'code': 'sin_datos', 'label': 'Sin seguimiento', 'color': 'secondary', 'detail': 'Aun no se registraron datos reales.'}
+
+        # Comparar inicios
+        if a_start and p_start:
+            if a_start < p_start:
+                start_status = 'temprano'
+            elif a_start > p_start:
+                start_status = 'tardio'
+            else:
+                start_status = 'a_tiempo'
+        else:
+            start_status = 'desconocido'
+
+        # Comparar fines
+        if a_end and p_end:
+            if a_end < p_end:
+                end_status = 'temprano'
+            elif a_end > p_end:
+                end_status = 'tardio'
+            else:
+                end_status = 'a_tiempo'
+        elif a_end is None and self.status == 'completed':
+            end_status = 'sin_fecha_real'
+        else:
+            end_status = 'pendiente'
+
+        # Determinar escenario
+        if end_status == 'tardio':
+            if start_status == 'tardio':
+                return {'code': 'atrasado_inicio_fin', 'label': 'Atrasado', 'color': 'danger',
+                        'detail': f'Inicio tardio ({(a_start - p_start).days} dia(s)) y finalizacion tardia ({(a_end - p_end).days} dia(s)).'}
+            elif start_status == 'a_tiempo':
+                return {'code': 'atrasado_fin', 'label': 'Atrasado', 'color': 'danger',
+                        'detail': f'Inicio a tiempo pero finalizacion tardia ({(a_end - p_end).days} dia(s) de atraso).'}
+            else:
+                return {'code': 'atrasado_fin', 'label': 'Atrasado', 'color': 'danger',
+                        'detail': f'Finalizacion tardia ({(a_end - p_end).days} dia(s) de atraso).'}
+
+        if end_status == 'temprano':
+            if start_status == 'temprano':
+                return {'code': 'adelantado_inicio_fin', 'label': 'Adelantado', 'color': 'success',
+                        'detail': f'Inicio temprano ({(p_start - a_start).days} dia(s)) y finalizacion anticipada ({(p_end - a_end).days} dia(s)).'}
+            elif start_status == 'a_tiempo':
+                return {'code': 'adelantado_fin', 'label': 'Adelantado', 'color': 'success',
+                        'detail': f'Inicio a tiempo y finalizacion anticipada ({(p_end - a_end).days} dia(s)).'}
+            else:
+                return {'code': 'adelantado_fin', 'label': 'Adelantado', 'color': 'success',
+                        'detail': f'Finalizacion anticipada ({(p_end - a_end).days} dia(s)).'}
+
+        if end_status == 'a_tiempo':
+            if start_status == 'tardio':
+                return {'code': 'recuperado', 'label': 'Recuperado', 'color': 'warning',
+                        'detail': f'Inicio tardio pero recuperado: finalizo a tiempo.'}
+            elif start_status == 'temprano':
+                return {'code': 'ventaja_perdida', 'label': 'Sin cambio neto', 'color': 'info',
+                        'detail': f'Inicio temprano pero finalizo en fecha planificada.'}
+            else:
+                return {'code': 'en_linea', 'label': 'En linea', 'color': 'success',
+                        'detail': 'Cumplido exactamente en fecha planificada.'}
+
+        # Para actividades en progreso sin fecha real de fin
+        if self.status == 'in_progress':
+            today = dt_date.today()
+            if today > p_end:
+                return {'code': 'en_curso_atrasado', 'label': 'En curso (atrasado)', 'color': 'warning',
+                        'detail': f'Actividad en progreso y ya pasó su fecha planificada de fin ({(today - p_end).days} dia(s) de atraso).'}
+            return {'code': 'en_curso', 'label': 'En curso', 'color': 'info',
+                    'detail': 'Actividad en progreso dentro del plazo planificado.'}
+
+        return {'code': 'pendiente', 'label': 'Pendiente', 'color': 'secondary', 'detail': 'Actividad pendiente de ejecucion.'}
+
+    # ── Propiedades de varianza ──────────────────────────────────────────
+
+    @property
+    def schedule_variance_days(self):
+        """
+        Días de diferencia entre lo planificado y lo real.
+        Negativo = atrasado, Positivo = adelantado.
+        Usa actual_end_date si está completa; si no, compara con hoy.
+        """
+        planned_end = self.end_date
+        if not planned_end:
+            return None
+        actual_end = self.actual_end_date
+        if not actual_end and self.status == 'completed':
+            actual_end = self.end_date  # si se completó pero sin fecha real, asumimos planificada
+        if not actual_end:
+            from datetime import date
+            actual_end = date.today()  # en progreso: contra hoy
+        return (planned_end - actual_end).days
+
+    @property
+    def cost_variance(self):
+        """
+        Diferencia entre costo planificado y real.
+        Positivo = gasté menos de lo planificado (bajo presupuesto).
+        Negativo = gasté más de lo planificado (sobrepresupuesto).
+        """
+        if self.cost is None:
+            return None
+        actual = self.actual_cost if self.actual_cost is not None else 0
+        return self.cost - actual
+
+    @property
+    def is_behind_schedule(self):
+        sv = self.schedule_variance_days
+        if sv is None:
+            return False
+        return sv < 0
+
+    @property
+    def is_over_budget(self):
+        cv = self.cost_variance
+        if cv is None:
+            return False
+        return cv < 0
+
+    # ── Fin propiedades de varianza ──────────────────────────────────────
 
     def __str__(self):
         return f"{self.name} - {self.project.name}"

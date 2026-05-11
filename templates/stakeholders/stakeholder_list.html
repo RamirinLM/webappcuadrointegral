@@ -1,93 +1,54 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Gestión de Interesados{% endblock %}
+{% block title %}Interesados{% endblock %}
+{% block page_heading %}Interesados{% endblock %}
+{% block page_summary %}Gestiona interesados y su relacion con proyectos visibles para el usuario actual.{% endblock %}
 
 {% block content %}
-<style>
-    .btn-action {
-        min-width: 100px; 
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-    }
-    .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-    }
-</style>
-
-<div class="container my-5 p-4 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI',sans-serif;">
-
-    <div class="text-center mb-4">
-        <img src="{% static 'logo.png' %}"  
-             alt="Logo Interesados"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:100px; border: 2px solid #004c99;">
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Listado de interesados</h2>
+            <p class="text-muted mb-0">Consulta nivel de interes, cargo y datos de contacto.</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'stakeholders:feedback_list' %}" class="btn btn-outline-secondary">Ver feedback</a>
+            <a href="{% url 'stakeholders:stakeholder_create' %}" class="btn btn-primary">Nuevo interesado</a>
+        </div>
     </div>
 
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        Gestión de Interesados
-    </h1>
-
-    <div class="text-center mb-4">
-        <a href="/"
-           class="btn fw-bold px-4 shadow-sm rounded-pill"
-           style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
-            🏠 Volver al Tablero
-        </a>
-
-        <a href="{% url 'stakeholders:stakeholder_create' %}"
-           class="btn fw-bold px-4 shadow-sm rounded-pill"
-           style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-            ➕ Crear Nuevo Interesado
-        </a>
-    </div>
-    
-    <div class="table-responsive">
-        <table class="table table-hover align-middle shadow-sm rounded text-center"
-               style="border:1px solid #e0e0e0; background-color: white;">
-            <thead style="background-color:#ffd600; color:#000; font-weight:700;">
-                <tr>
-                    <th>Nombre</th>
-                    <th>Nivel Interés</th>
-                    <th>Cargo</th>
-                    <th>Email</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for stakeholder in stakeholders %}
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
                     <tr>
-                        <td class="fw-bold">{{ stakeholder.name }}</td>
+                        <th>Nombre</th>
+                        <th>Nivel de interes</th>
+                        <th>Cargo</th>
+                        <th>Email</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stakeholder in stakeholders %}
+                    <tr>
+                        <td>{{ stakeholder.name }}</td>
                         <td>{{ stakeholder.interest_level }}</td>
                         <td>{{ stakeholder.role }}</td>
                         <td>{{ stakeholder.email }}</td>
-                        <td>
-                            <div class="d-flex justify-content-center gap-2">
-                                <a href="{% url 'stakeholders:stakeholder_edit' stakeholder.pk %}"  
-                                   class="btn btn-sm btn-action fw-bold shadow-sm rounded-pill"
-                                   style="background-color:#ffd600; color:#000; border:1px solid #c5a600;">
-                                    ✏️ Editar
-                                </a>
-                                <a href="{% url 'stakeholders:stakeholder_delete' stakeholder.pk %}"  
-                                   class="btn btn-sm btn-action fw-bold shadow-sm rounded-pill"
-                                   style="background-color:#d32f2f; color:#fff; border:1px solid #b71c1c;">
-                                    🗑️ Borrar
-                                </a>
-                            </div>
+                        <td class="text-nowrap">
+                            <a href="{% url 'stakeholders:stakeholder_edit' stakeholder.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                            <a href="{% url 'stakeholders:stakeholder_delete' stakeholder.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
                         </td>
                     </tr>
-                {% empty %}
+                    {% empty %}
                     <tr>
-                        <td colspan="5" class="text-secondary py-4">No hay interesados registrados.</td>
+                        <td colspan="5" class="empty-state">No hay interesados registrados.</td>
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
-</div>
+</section>
 {% endblock %}

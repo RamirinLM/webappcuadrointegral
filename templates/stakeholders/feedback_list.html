@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}Feedback{% endblock %}
+{% block page_heading %}Feedback de stakeholders{% endblock %}
+{% block page_summary %}Consulta calificaciones, comentarios y fecha de registro de la retroalimentacion recibida.{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Retroalimentacion registrada</h2>
+            <p class="text-muted mb-0">El feedback sirve como evidencia de satisfaccion y seguimiento de interesados.</p>
+        </div>
+        <a href="{% url 'stakeholders:feedback_create' %}" class="btn btn-primary">Nuevo feedback</a>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Proyecto</th>
+                        <th>Interesado</th>
+                        <th>Calificacion</th>
+                        <th>Comentarios</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for feedback in feedbacks %}
+                    <tr>
+                        <td>{{ feedback.project.name }}</td>
+                        <td>{{ feedback.stakeholder.name }}</td>
+                        <td>{{ feedback.rating }}/5</td>
+                        <td>{{ feedback.comments|default:"Sin comentarios" }}</td>
+                        <td>{{ feedback.created_at|date:"d/m/Y H:i" }}</td>
+                        <td class="text-nowrap">
+                            <a href="{% url 'stakeholders:feedback_edit' feedback.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                            <a href="{% url 'stakeholders:feedback_delete' feedback.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="empty-state">No hay feedback registrado.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

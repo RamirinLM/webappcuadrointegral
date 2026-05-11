@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block title %}Eliminar feedback{% endblock %}
+{% block page_heading %}Eliminar feedback{% endblock %}
+{% block page_summary %}Confirma la eliminacion de la retroalimentacion del stakeholder seleccionado.{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <div class="alert alert-danger" role="alert">
+        Se eliminara la retroalimentacion de <strong>{{ feedback.stakeholder.name }}</strong> para el proyecto <strong>{{ feedback.project.name }}</strong>.
+    </div>
+    <form method="post" class="page-actions justify-content-end mt-4">
+        {% csrf_token %}
+        <a href="{% url 'stakeholders:feedback_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">Eliminar feedback</button>
+    </form>
+</section>
+{% endblock %}

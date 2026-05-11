@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
 from resources.models import Resource
-from projects.models import Project, UserProfile
+from projects.models import Project, UserProfile, Activity
 from datetime import date
 
 class ResourceManagementTestCase(TestCase):
@@ -20,10 +20,18 @@ class ResourceManagementTestCase(TestCase):
             end_date=date(2023, 12, 31),
             created_by=self.user
         )
+        self.activity = Activity.objects.create(
+            project=self.project,
+            name='Test Activity',
+            description='Activity description',
+            start_date=date(2023, 1, 1),
+            end_date=date(2023, 1, 31),
+            status='pending'
+        )
 
     def test_resource_creation_success(self):
         response = self.client.post(reverse('resources:resource_create'), {
-            'project': self.project.pk,
+            'activity': self.activity.pk,
             'name': 'Test Resource',
             'type': 'human',
             'quantity': 5,
@@ -36,7 +44,7 @@ class ResourceManagementTestCase(TestCase):
 
     def test_resource_creation_validation_error(self):
         response = self.client.post(reverse('resources:resource_create'), {
-            'project': self.project.pk,
+            'activity': self.activity.pk,
             'name': '',
             'type': 'human',
             'quantity': -1,
@@ -48,7 +56,7 @@ class ResourceManagementTestCase(TestCase):
 
     def test_resource_list_view(self):
         Resource.objects.create(
-            project=self.project,
+            activity=self.activity,
             name='Resource 1',
             type='material',
             quantity=10,

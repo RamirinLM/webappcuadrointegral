@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from datetime import date
 from resources.models import Resource
-from projects.models import Project
+from projects.models import Activity, Project
 
 class TestResourceViews(TestCase):
     def setUp(self):
@@ -16,6 +16,13 @@ class TestResourceViews(TestCase):
             start_date=date.today(),
             end_date=date.today(),
             created_by=self.user
+        )
+        self.activity = Activity.objects.create(
+            project=self.project,
+            name='Actividad Base',
+            description='Actividad',
+            start_date=date.today(),
+            end_date=date.today(),
         )
 
     def test_resource_list(self):
@@ -32,7 +39,7 @@ class TestResourceViews(TestCase):
 
     def test_resource_create_post_valid(self):
         data = {
-            'project': self.project.pk,
+            'activity': self.activity.pk,
             'name': 'New Resource',
             'type': 'equipment',
             'quantity': 5,
@@ -57,3 +64,16 @@ class TestResourceViews(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'resources/resource_form.html')
         self.assertFalse(response.context['form'].is_valid())
+
+    def test_resource_create_post_missing_activity_fails_gracefully(self):
+        data = {
+            'project': self.project.pk,
+            'name': 'Legacy Resource',
+            'type': 'human',
+            'quantity': 1,
+            'cost_per_unit': '10.00'
+        }
+        response = self.client.post(reverse('resources:resource_create'), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Debe seleccionar una actividad válida')
+        self.assertEqual(Resource.objects.count(), 0)

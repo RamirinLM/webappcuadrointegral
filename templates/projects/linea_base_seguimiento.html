@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Linea Base - {{ project.name }}{% endblock %}
+{% block page_heading %}Linea Base: {{ project.name }}{% endblock %}
+{% block page_summary %}Planificacion vs Ejecucion real. Completa los datos reales por actividad y genera el seguimiento.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .scenario-badge { font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 999px; white-space: nowrap; }
+    .inplace-input { min-width: 100px; }
+    .inplace-input-sm { min-width: 80px; }
+    .variance-positive { color: #28a745; font-weight: 600; }
+    .variance-negative { color: #dc3545; font-weight: 600; }
+    .variance-zero { color: #6c757d; }
+    .metric-evm {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        text-align: center;
+    }
+    .metric-evm .value { font-size: 1.25rem; font-weight: 700; }
+    .metric-evm .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px; color: #6c757d; }
+    .sticky-header { position: sticky; top: 0; background: white; z-index: 10; }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post" id="linea-base-form" novalidate>
+    {% csrf_token %}
+
+    {# ── Cabecera del proyecto ── #}
+    <section class="page-card mb-4">
+        <div class="page-toolbar">
+            <div>
+                <h2 class="section-title mb-1">{{ project.name }}</h2>
+                <p class="text-muted mb-0">
+                    {{ project.start_date|date:"d/m/Y" }} — {{ project.end_date|date:"d/m/Y" }}
+                    &middot; Presupuesto: <strong>${{ project.budget|default:0|floatformat:2 }}</strong>
+                </p>
+            </div>
+            <div class="page-actions">
+                <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-secondary btn-sm">Volver al proyecto</a>
+            </div>
+        </div>
+
+        <div class="row g-3 align-items-end mt-2">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Fecha de corte del seguimiento</label>
+                <input type="date" name="fecha" id="id_fecha" class="form-control"
+                       value="{{ latest_seguimiento.fecha|date:'Y-m-d'|default:today|date:'Y-m-d' }}" required>
+                <div class="form-text">Selecciona la fecha de corte. Se evaluara que actividades estaban planificadas vs. las realmente ejecutadas a esta fecha.</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Actividades planificadas hasta el corte</label>
+                <div class="h5 mb-0">{{ activities.count }} total &middot;
+                    <span class="text-success">{{ completed_count|default:0 }}</span> completas &middot;
+                    <span class="text-warning">{{ in_progress_count|default:0 }}</span> en curso
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <strong>Guardar seguimiento</strong>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    {# ── Tabla de actividades: Planificado vs Real ── #}
+    <section class="page-card">
+        <div class="page-toolbar sticky-header">
+            <h3 class="section-title mb-0">Actividades de la linea base</h3>
+            <span class="text-muted small">Completa las columnas "Real" con lo que realmente paso.</span>
+        </div>
+
+        <div class="table-card">
+            <div class="table-responsive">
+                <table class="table data-table mb-0" id="act-table">
+                    <thead>
+                        <tr>
+                            <th style="min-width:160px;">Actividad</th>
+                            <th>Estado</th>
+                            <th colspan="2" class="text-center bg-light">Planificado (Linea base)</th>
+                            <th colspan="3" class="text-center bg-warning-subtle">Real (Seguimiento)</th>
+                            <th colspan="2" class="text-center">Variacion</th>
+                            <th>Escenario</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <!-- Planificado -->
+                            <th class="fw-normal small text-muted">Inicio</th>
+                            <th class="fw-normal small text-muted">Fin / Costo</th>
+                            <!-- Real -->
+                            <th class="fw-normal small text-muted">Inicio</th>
+                            <th class="fw-normal small text-muted">Fin</th>
+                            <th class="fw-normal small text-muted">Costo $</th>
+                            <!-- Variacion -->
+                            <th class="fw-normal small text-muted">Dias</th>
+                            <th class="fw-normal small text-muted">$</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for act in activities %}
+                        {% with sc=act.tracking_scenario %}
+                        <tr class="{% if sc.code == 'atrasado_inicio_fin' or sc.code == 'atrasado_fin' %}table-danger{% elif sc.code == 'adelantado_inicio_fin' or sc.code == 'adelantado_fin' %}table-success{% elif sc.code == 'en_curso_atrasado' %}table-warning{% endif %}">
+                            <td>
+                                <strong>{{ act.name }}</strong>
+                                {% if act.predecessor %}
+                                <div class="small text-muted">← {{ act.predecessor.name }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="status-chip {% if act.status == 'completed' %}bg-success{% elif act.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %} text-white">
+                                    {{ act.get_status_display }}
+                                </span>
+                            </td>
+
+                            {# ── Planificado ── #}
+                            <td class="small">{{ act.start_date|date:"d/m/Y" }}</td>
+                            <td class="small">
+                                {{ act.end_date|date:"d/m/Y" }}<br>
+                                <span class="text-muted">${{ act.cost|default:0|floatformat:2 }}</span>
+                            </td>
+
+                            {# ── Real (inputs) ── #}
+                            <td>
+                                <input type="date" name="actual_start_{{ act.id }}"
+                                       class="form-control form-control-sm inplace-input"
+                                       value="{{ act.actual_start_date|date:'Y-m-d'|default:'' }}"
+                                       {% if act.actual_start_date %}placeholder="{{ act.actual_start_date|date:'Y-m-d' }}"{% endif %}>
+                            </td>
+                            <td>
+                                <input type="date" name="actual_end_{{ act.id }}"
+                                       class="form-control form-control-sm inplace-input"
+                                       value="{{ act.actual_end_date|date:'Y-m-d'|default:'' }}"
+                                       {% if act.actual_end_date %}placeholder="{{ act.actual_end_date|date:'Y-m-d' }}"{% endif %}>
+                            </td>
+                            <td>
+                                <input type="number" name="actual_cost_{{ act.id }}"
+                                       class="form-control form-control-sm inplace-input-sm"
+                                       step="0.01" min="0"
+                                       value="{{ act.actual_cost|default:'' }}"
+                                       placeholder="{% if act.cost %}{{ act.cost }}{% endif %}">
+                            </td>
+
+                            {# ── Variacion ── #}
+                            <td class="small">
+                                {% with sv=act.schedule_variance_days %}
+                                    {% if sv is None %}<span class="text-muted">—</span>
+                                    {% elif sv < 0 %}<span class="variance-negative">{{ sv }}d</span>
+                                    {% elif sv > 0 %}<span class="variance-positive">+{{ sv }}d</span>
+                                    {% else %}<span class="variance-zero">0d</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="small">
+                                {% with cv=act.cost_variance %}
+                                    {% if cv is None %}<span class="text-muted">—</span>
+                                    {% elif cv < 0 %}<span class="variance-negative">${{ cv|floatformat:2 }}</span>
+                                    {% elif cv > 0 %}<span class="variance-positive">+${{ cv|floatformat:2 }}</span>
+                                    {% else %}<span class="variance-zero">$0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+
+                            {# ── Escenario ── #}
+                            <td>
+                                <span class="scenario-badge badge bg-{{ sc.color }}">
+                                    {{ sc.label }}
+                                </span>
+                                <div class="small text-muted" style="max-width:200px;" title="{{ sc.detail }}">
+                                    {{ sc.detail|truncatechars:40 }}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endwith %}
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="empty-state">
+                                No hay actividades en la linea base.
+                                <a href="{% url 'activity_create' %}" class="btn btn-sm btn-primary ms-2">Crear actividad</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    {# ── Observaciones ── #}
+    <section class="page-card mt-4">
+        <div class="row g-4">
+            <div class="col-md-8">
+                <label class="form-label fw-semibold">Observaciones del seguimiento</label>
+                <textarea name="observacion" class="form-control" rows="3"
+                          placeholder="Anota hallazgos, desviaciones, acciones correctivas...">{{ latest_seguimiento.observacion|default:'' }}</textarea>
+            </div>
+            <div class="col-md-4 d-flex flex-column justify-content-end">
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <strong>Guardar seguimiento</strong>
+                </button>
+            </div>
+        </div>
+    </section>
+</form>
+
+{# ── Seguimientos anteriores ── #}
+{% if all_seguimientos %}
+<section class="page-card mt-4">
+    <div class="page-toolbar">
+        <h3 class="section-title mb-0">Historial de seguimientos</h3>
+    </div>
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>PV</th>
+                        <th>EV</th>
+                        <th>AC</th>
+                        <th>SV</th>
+                        <th>CV</th>
+                        <th>CPI</th>
+                        <th>SPI</th>
+                        <th>Observacion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for seg in all_seguimientos %}
+                    <tr>
+                        <td>{{ seg.fecha|date:"d/m/Y" }}</td>
+                        <td>${{ seg.pv|floatformat:2 }}</td>
+                        <td>${{ seg.ev|floatformat:2 }}</td>
+                        <td>${{ seg.ac|floatformat:2 }}</td>
+                        <td class="{% if seg.sv < 0 %}text-danger{% elif seg.sv > 0 %}text-success{% endif %}">
+                            ${{ seg.sv|floatformat:2 }}
+                        </td>
+                        <td class="{% if seg.cv < 0 %}text-danger{% elif seg.cv > 0 %}text-success{% endif %}">
+                            ${{ seg.cv|floatformat:2 }}
+                        </td>
+                        <td>{{ seg.cpi|floatformat:2 }}</td>
+                        <td>{{ seg.spi|floatformat:2 }}</td>
+                        <td class="small text-muted">{{ seg.observacion|truncatechars:50 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="9" class="empty-state">Aun no hay seguimientos registrados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Auto-marcar estado como completada cuando se ingresa fecha real de fin
+    document.querySelectorAll("input[name^='actual_end_']").forEach(function(input) {
+        input.addEventListener("change", function() {
+            if (this.value) {
+                // Podriamos actualizar el status-chip via AJAX, pero por ahora
+                // el backend se encarga al guardar.
+                this.style.borderColor = "#28a745";
+            }
+        });
+    });
+
+    // Validar que la fecha de seguimiento no sea futura (opcional)
+    const fechaInput = document.getElementById("id_fecha");
+    if (fechaInput) {
+        const today = new Date().toISOString().split('T')[0];
+        const projectEnd = "{{ project.end_date|date:'Y-m-d'|default:'' }}";
+        if (projectEnd) {
+            fechaInput.max = projectEnd;
+        }
+    }
+
+    // Confirmar antes de guardar si hay campos vacios
+    document.getElementById("linea-base-form").addEventListener("submit", function(e) {
+        // Sin confirmacion molesta, el usuario puede guardar cuando quiera
+    });
+});
+</script>
+{% endblock %}

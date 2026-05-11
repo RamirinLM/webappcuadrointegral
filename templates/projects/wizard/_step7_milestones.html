@@ -1,0 +1,289 @@
+<div class="alert alert-info mb-4">
+    <strong>Definicion de hitos</strong><br>
+    Los hitos marcan logros relevantes o cierres de fase dentro del proyecto.
+    {% if project_start_date and project_end_date %}
+    <br><small class="text-muted">El proyecto va del <strong>{{ project_start_date }}</strong> al <strong>{{ project_end_date }}</strong>. Los hitos deben quedar dentro de ese rango.</small>
+    {% endif %}
+</div>
+
+<input type="hidden" name="milestones" id="milestones-input" value="[]">
+<input type="hidden" id="project-start-date" value="{{ project_start_date|default:'' }}">
+<input type="hidden" id="project-end-date" value="{{ project_end_date|default:'' }}">
+
+<div class="card mb-4 bg-light">
+    <div class="card-body">
+        <h6 class="card-title">Fases del proyecto</h6>
+        <div class="d-flex flex-wrap gap-2">
+            <span class="badge bg-primary p-2">Inicio</span>
+            <span class="badge bg-secondary p-2">Planificacion</span>
+            <span class="badge bg-info text-dark p-2">Ejecucion</span>
+            <span class="badge bg-warning text-dark p-2">Monitoreo y control</span>
+            <span class="badge bg-success p-2">Cierre</span>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-success text-white">
+        <h6 class="mb-0">Nuevo hito</h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Nombre del hito *</label>
+                <input type="text" class="form-control" id="milestone-name" placeholder="Ej: Aprobacion del diseno">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Fecha limite *</label>
+                <input type="date" class="form-control" id="milestone-due-date">
+                <div id="milestone-date-error" class="text-danger small mt-1"></div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Fase</label>
+                <select class="form-select" id="milestone-phase">
+                    <option value="initiation">Inicio</option>
+                    <option value="planning">Planificacion</option>
+                    <option value="execution" selected>Ejecucion</option>
+                    <option value="monitoring">Monitoreo y control</option>
+                    <option value="closure">Cierre</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Descripcion</label>
+            <textarea class="form-control" id="milestone-description" rows="2" placeholder="Describe el hito y sus criterios de finalizacion"></textarea>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="milestone-phase-gate">
+                    <label class="form-check-label" for="milestone-phase-gate">
+                        <strong>Es cierre de fase</strong><br>
+                        <small class="text-muted">Marca el final de una fase del proyecto.</small>
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Actividades asociadas</label>
+                <select class="form-select" id="milestone-activities" multiple size="4"></select>
+                <small class="text-muted">Mantenga Ctrl para seleccionar varias.</small>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-success" onclick="addMilestone()">Agregar hito</button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h6 class="mb-0">Hitos del proyecto</h6>
+    </div>
+    <div class="card-body">
+        <div id="milestones-list">
+            <p class="text-muted text-center">No hay hitos agregados</p>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="mb-0">Cronograma de hitos</h6>
+    </div>
+    <div class="card-body">
+        <div id="milestones-timeline"></div>
+    </div>
+</div>
+
+<div class="card mt-4 bg-success text-white">
+    <div class="card-body text-center">
+        <h5>Estas a punto de completar la creacion del proyecto</h5>
+        <p class="mb-0">Revisa los hitos y usa "Finalizar proyecto" para terminar el proceso.</p>
+    </div>
+</div>
+
+<script>
+let milestones = [];
+{% if milestones %}
+milestones = {{ milestones|escapejs }};
+if (milestones.length > 0) {
+    updateMilestonesList();
+    updateTimeline();
+}
+{% endif %}
+
+let projectActivities = [];
+let projectStartDate = '';
+let projectEndDate = '';
+
+{% if existing_activities %}
+projectActivities = [
+    {% for act in existing_activities %}
+    { id: '{{ act.id }}', name: '{{ act.name }}' },
+    {% endfor %}
+];
+{% endif %}
+
+{% if activities %}
+{% for act in activities %}
+projectActivities.push({ id: '{{ act.id }}', name: '{{ act.name }}' });
+{% endfor %}
+{% endif %}
+
+document.addEventListener('DOMContentLoaded', function() {
+    projectStartDate = document.getElementById('project-start-date').value;
+    projectEndDate = document.getElementById('project-end-date').value;
+
+    const dueDateInput = document.getElementById('milestone-due-date');
+    if (projectStartDate) {
+        dueDateInput.min = projectStartDate;
+    }
+    if (projectEndDate) {
+        dueDateInput.max = projectEndDate;
+    }
+
+    dueDateInput.addEventListener('change', validateMilestoneDate);
+    updateActivitiesSelect();
+});
+
+function validateMilestoneDate() {
+    const dueDateInput = document.getElementById('milestone-due-date');
+    const dateError = document.getElementById('milestone-date-error');
+    const dueDate = dueDateInput.value;
+
+    dateError.textContent = '';
+    dueDateInput.classList.remove('is-invalid');
+    let hasError = false;
+
+    if (projectStartDate && dueDate && dueDate < projectStartDate) {
+        dueDateInput.classList.add('is-invalid');
+        dateError.textContent = 'No puede ser anterior al inicio del proyecto (' + projectStartDate + ').';
+        hasError = true;
+    }
+
+    if (projectEndDate && dueDate && dueDate > projectEndDate) {
+        dueDateInput.classList.add('is-invalid');
+        dateError.textContent = 'No puede ser posterior al fin del proyecto (' + projectEndDate + ').';
+        hasError = true;
+    }
+
+    return !hasError;
+}
+
+function updateActivitiesSelect() {
+    const select = document.getElementById('milestone-activities');
+    select.innerHTML = projectActivities.map(a => `<option value="${a.id}">${a.name}</option>`).join('');
+}
+
+function addMilestone() {
+    const name = document.getElementById('milestone-name').value;
+    const dueDate = document.getElementById('milestone-due-date').value;
+
+    if (!name || !dueDate) {
+        alert('Completa el nombre y la fecha limite del hito.');
+        return;
+    }
+
+    if (!validateMilestoneDate()) {
+        alert('Corrige la fecha del hito antes de continuar.');
+        return;
+    }
+
+    const selectedActivities = Array.from(document.getElementById('milestone-activities').selectedOptions).map(o => o.value);
+
+    const milestone = {
+        id: 'mile_' + Date.now(),
+        name: name,
+        description: document.getElementById('milestone-description').value,
+        due_date: dueDate,
+        phase: document.getElementById('milestone-phase').value,
+        is_phase_gate: document.getElementById('milestone-phase-gate').checked,
+        activities: selectedActivities
+    };
+
+    milestones.push(milestone);
+    updateMilestonesList();
+    updateTimeline();
+    clearMilestoneForm();
+}
+
+function removeMilestone(id) {
+    milestones = milestones.filter(m => m.id !== id);
+    updateMilestonesList();
+    updateTimeline();
+}
+
+function updateMilestonesList() {
+    const list = document.getElementById('milestones-list');
+    const input = document.getElementById('milestones-input');
+    input.value = JSON.stringify(milestones);
+
+    if (milestones.length === 0) {
+        list.innerHTML = '<p class="text-muted text-center">No hay hitos agregados</p>';
+        return;
+    }
+
+    const phaseLabels = {
+        initiation: 'Inicio',
+        planning: 'Planificacion',
+        execution: 'Ejecucion',
+        monitoring: 'Monitoreo',
+        closure: 'Cierre'
+    };
+
+    list.innerHTML = milestones.map(m => `
+        <div class="dynamic-item ${m.is_phase_gate ? 'border-start border-success border-4' : ''}">
+            <div class="item-info">
+                <div class="item-title">${m.name}${m.is_phase_gate ? '<span class="badge bg-success ms-2">Cierre de fase</span>' : ''}</div>
+                <div class="item-details">
+                    <span class="badge bg-primary">${phaseLabels[m.phase]}</span>
+                    <span class="badge bg-secondary">${m.due_date}</span>
+                    ${m.description ? '<br><small>' + m.description + '</small>' : ''}
+                </div>
+            </div>
+            <button type="button" class="btn-remove" onclick="removeMilestone('${m.id}')">x</button>
+        </div>
+    `).join('');
+}
+
+function updateTimeline() {
+    const timeline = document.getElementById('milestones-timeline');
+
+    if (milestones.length === 0) {
+        timeline.innerHTML = '<p class="text-muted text-center">Agrega hitos para ver el cronograma</p>';
+        return;
+    }
+
+    const sorted = [...milestones].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+    const phaseColors = { initiation: 'primary', planning: 'secondary', execution: 'info', monitoring: 'warning', closure: 'success' };
+
+    timeline.innerHTML = `
+        <div class="d-flex flex-wrap justify-content-between position-relative">
+            <div class="position-absolute" style="top: 20px; left: 0; right: 0; height: 4px; background: #e0e0e0;"></div>
+            ${sorted.map((m, i) => `
+                <div class="text-center position-relative" style="flex: 1; min-width: 100px;">
+                    <div class="rounded-circle bg-${phaseColors[m.phase]} d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px; color: white; font-weight: bold; position: relative; z-index: 1;">
+                        ${i + 1}
+                    </div>
+                    <div class="mt-2">
+                        <strong class="d-block small">${m.name}</strong>
+                        <small class="text-muted">${m.due_date}</small>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+function clearMilestoneForm() {
+    document.getElementById('milestone-name').value = '';
+    document.getElementById('milestone-description').value = '';
+    document.getElementById('milestone-due-date').value = '';
+    document.getElementById('milestone-phase').value = 'execution';
+    document.getElementById('milestone-phase-gate').checked = false;
+    document.getElementById('milestone-activities').selectedIndex = -1;
+    document.getElementById('milestone-date-error').textContent = '';
+    document.getElementById('milestone-due-date').classList.remove('is-invalid');
+}
+</script>

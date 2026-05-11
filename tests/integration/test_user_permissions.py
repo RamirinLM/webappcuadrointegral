@@ -39,28 +39,32 @@ class UserPermissionsTest(TestCase):
         self.activity1 = Activity.objects.create(
             project=self.project1,
             name='Activity 1',
+            description='Activity 1 description',
             start_date=date.today(),
             end_date=date.today() + timedelta(days=10),
+            status='pending',
             assigned_to=self.user1
         )
         self.activity2 = Activity.objects.create(
             project=self.project2,
             name='Activity 2',
+            description='Activity 2 description',
             start_date=date.today(),
             end_date=date.today() + timedelta(days=10),
+            status='pending',
             assigned_to=self.user2
         )
 
-        # Resources linked to projects
+        # Resources linked to activities
         self.resource1 = Resource.objects.create(
-            project=self.project1,
+            activity=self.activity1,
             name='Resource 1',
             type='material',
             quantity=1,
             cost_per_unit=100.00
         )
         self.resource2 = Resource.objects.create(
-            project=self.project2,
+            activity=self.activity2,
             name='Resource 2',
             type='material',
             quantity=1,
@@ -112,19 +116,19 @@ class UserPermissionsTest(TestCase):
         self.assertNotContains(response, 'Activity 2')
 
     def test_resource_list_shows_all_but_creation_limited(self):
-        # Resources list shows all (current implementation)
+        # Resources list shows resources for user's projects (via activities)
         self.client.login(username='user1', password='pass')
         response = self.client.get('/resources/')
         self.assertEqual(response.status_code, 200)
+        # Resource 1 is linked to activity1 which is in project1 (user1's project)
         self.assertContains(response, 'Resource 1')
-        self.assertContains(response, 'Resource 2')  # Shows all
 
-    def test_risk_list_shows_all(self):
+    def test_risk_list_scoped_to_user_projects(self):
         self.client.login(username='user1', password='pass')
         response = self.client.get('/risks/')
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Risk 1')
-        self.assertContains(response, 'Risk 2')
+        self.assertNotContains(response, 'Risk 2')
 
     def test_stakeholder_list_shows_all(self):
         self.client.login(username='user1', password='pass')
@@ -138,9 +142,9 @@ class UserPermissionsTest(TestCase):
         response = self.client.get(f'/projects/{self.project1.pk}/')
         self.assertEqual(response.status_code, 200)
 
-        # But not project2
+        # But not project2 - should redirect to project_list
         response = self.client.get(f'/projects/{self.project2.pk}/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 302)  # Redirects when no permission
 
     def test_user_assignment_via_activities(self):
         # Test that users are assigned to projects via activities

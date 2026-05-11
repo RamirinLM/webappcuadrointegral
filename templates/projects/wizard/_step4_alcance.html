@@ -1,0 +1,71 @@
+<div class="alert alert-info mb-4" role="status">
+    <strong>Definicion del alcance</strong><br>
+    Define con claridad que se entregara, que queda fuera del proyecto y bajo que restricciones se ejecutara.
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <section class="form-section h-100">
+            <h3 class="section-title">Contenido principal</h3>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                        {{ form.descripcion.label }} <span class="text-danger">*</span>
+                    </label>
+                    {{ form.descripcion }}
+                    {% if form.descripcion.errors %}
+                    <div class="text-danger small mt-1">{{ form.descripcion.errors|join:", " }}</div>
+                    {% endif %}
+                    <div class="form-text">Incluye limites, restricciones, supuestos y criterios de aceptacion del proyecto.</div>
+                </div>
+
+                <div class="col-12">
+                    <label for="{{ form.objetivos.id_for_label }}" class="form-label">
+                        {{ form.objetivos.label }} <span class="text-danger">*</span>
+                    </label>
+                    {{ form.objetivos }}
+                    {% if form.objetivos.errors %}
+                    <div class="text-danger small mt-1">{{ form.objetivos.errors|join:", " }}</div>
+                    {% endif %}
+                    <div class="form-text">Describe objetivos medibles y verificables para el alcance aprobado.</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-4">
+        <section class="form-section h-100">
+            <h3 class="section-title">Guia rapida</h3>
+            <div class="small text-muted mb-3">Usa este bloque como referencia para mantener un alcance claro y controlable.</div>
+
+            <div class="mb-3">
+                <div class="fw-semibold text-success mb-2">Debe incluir</div>
+                <ul class="small mb-0 ps-3">
+                    <li>Descripcion del producto o servicio</li>
+                    <li>Entregables principales</li>
+                    <li>Criterios de aceptacion</li>
+                    <li>Exclusiones explicitas</li>
+                    <li>Restricciones y supuestos</li>
+                </ul>
+            </div>
+
+            <div class="mb-3">
+                <div class="fw-semibold text-danger mb-2">Debe evitar</div>
+                <ul class="small mb-0 ps-3">
+                    <li>Trabajo no autorizado</li>
+                    <li>Requisitos futuros no aprobados</li>
+                    <li>Actividades fuera del alcance</li>
+                    <li>Compromisos sin respaldo de recursos</li>
+                </ul>
+            </div>
+
+            <div class="alert alert-light border mb-0">
+                <div class="fw-semibold mb-2">Ejemplo</div>
+                <div class="small text-muted">
+                    Implementacion de un sistema documental con entrega del sistema funcional, manual de usuario,
+                    capacitacion y migracion inicial. Quedan fuera integraciones futuras y digitalizacion de archivos fisicos.
+                </div>
+            </div>
+        </section>
+    </div>
+</div>

@@ -1,60 +1,64 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Crear Riesgo{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar riesgo{% else %}Crear riesgo{% endif %}{% endblock %}
+{% block page_heading %}{% if form.instance.pk %}Editar riesgo{% else %}Crear riesgo{% endif %}{% endblock %}
+{% block page_summary %}Registra probabilidad, impacto, mitigacion y estado de riesgos asociados a proyectos.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-4 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:700px;">
-
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/risk_logo.png' %}"  
-             alt="Crear Riesgo"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:100px;">
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Registro de riesgo</h2>
+            <p class="text-muted mb-0">Documenta el riesgo, su severidad y la respuesta prevista para el proyecto seleccionado.</p>
+        </div>
+        <span class="status-chip">{% if form.instance.pk %}Edicion{% else %}Nuevo riesgo{% endif %}</span>
     </div>
 
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#d32f2f; letter-spacing:1px; text-transform:uppercase;">
-        Crear Riesgo
-    </h1>
-
-    <form method="post" class="needs-validation">
+    <form method="post" novalidate>
         {% csrf_token %}
-        <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light">
-            {% for field in form %}
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
-                    </div>
-                    <div class="col-sm-9">
-                        {{ field }}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="form-section">
+                    <h3 class="section-title">Datos del riesgo</h3>
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'description' or field.name == 'mitigation_plan' %}col-12{% else %}col-md-6{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
                 </div>
-            {% endfor %}
+            </div>
+
+            <div class="col-lg-4">
+                <div class="form-section h-100">
+                    <h3 class="section-title">Buenas practicas</h3>
+                    <ul class="small mb-0 ps-3">
+                        <li>Describe el evento de riesgo de forma concreta y verificable.</li>
+                        <li>Evalua probabilidad e impacto con el mismo criterio usado por el equipo.</li>
+                        <li>Si el riesgo es alto, agrega mitigacion antes de guardar.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
-        <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
-            
-            <a href="javascript:history.back()" 
-               class="btn fw-bold px-4 shadow-sm rounded-pill" 
-               style="background-color:#bdbdbd; color:#000; border:2px solid #757575;">
-               ⬅️ Regresar
-            </a>
-
-            <button type="submit"  
-                    class="btn fw-bold px-4 shadow-sm rounded-pill"  
-                    style="background-color:#d32f2f; color:#fff; border:2px solid #b71c1c;">
-                ✅ Guardar
-            </button>
-
-            <a href="{% url 'risks:risk_list' %}"  
-               class="btn fw-semibold px-4 shadow-sm rounded-pill"  
-               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-                ✖️ Cancelar
-            </a>
-            
+        <div class="page-actions justify-content-end mt-4">
+            <a href="{% url 'risks:risk_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar riesgo</button>
         </div>
     </form>
-</div>
+</section>
 {% endblock %}

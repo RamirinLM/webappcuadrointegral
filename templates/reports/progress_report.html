@@ -1,47 +1,28 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Informe de Progreso - {{ project.name }}{% endblock %}
+{% block title %}Informe de progreso{% endblock %}
+{% block page_heading %}Informe de progreso{% endblock %}
+{% block page_summary %}Resume el avance general y el total de actividades completadas del proyecto {{ project.name }}.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-4 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%); font-family:'Segoe UI','Helvetica Neue',sans-serif; max-width:800px;">
-
-    <!-- Imagen superior opcional -->
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/progress_report_logo.png' %}"  
-             alt="Informe de Progreso"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:120px;">
+<section class="page-card">
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Proyecto</div>
+            <div class="metric-value">{{ project.name }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Progreso general</div>
+            <div class="metric-value">{{ progress|floatformat:1 }}%</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Actividades completadas</div>
+            <div class="metric-value">{{ completed }} / {{ total }}</div>
+        </div>
     </div>
 
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        Informe de Progreso - {{ project.name }}
-    </h1>
-
-    <!-- Información general -->
-    <div class="p-3 bg-white rounded shadow-sm mb-4 border border-light text-center">
-        <p><strong>Progreso General:</strong> 
-            <span class="badge px-3 py-2 rounded-pill" style="background-color:#4fc3f7; color:#000;">
-                {{ progress|floatformat:1 }}%
-            </span>
-        </p>
-        <p><strong>Actividades Completadas:</strong> 
-            <span class="badge px-3 py-2 rounded-pill" style="background-color:#ffd600; color:#000;">
-                {{ completed }} / {{ total }}
-            </span>
-        </p>
+    <div class="page-actions justify-content-end mt-4">
+        <a href="{% url 'reports:report_list' %}" class="btn btn-outline-secondary">Volver a reportes</a>
     </div>
-
-    <!-- Botón volver -->
-    <div class="text-center mt-4">
-        <a href="{% url 'reports:report_list' %}" 
-           class="btn fw-bold px-4 shadow-sm rounded-pill" 
-           style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-            ⬅️ Volver a Reportes
-        </a>
-    </div>
-</div>
+</section>
 {% endblock %}
-

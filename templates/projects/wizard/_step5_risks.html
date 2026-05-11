@@ -1,0 +1,315 @@
+<div class="alert alert-info mb-4" role="status">
+    <strong>Gestion de riesgos y comunicacion</strong><br>
+    Registra los riesgos principales del proyecto y deja definido como se comunicaran avances y alertas.
+</div>
+
+<div class="row g-4">
+    <div class="col-xl-7">
+        <section class="form-section h-100">
+            <div class="page-toolbar mb-3">
+                <div>
+                    <h3 class="section-title mb-1">Riesgos del proyecto</h3>
+                    <p class="text-muted mb-0">Captura descripcion, probabilidad, impacto y mitigacion para cada riesgo.</p>
+                </div>
+                <span class="status-chip">Paso critico</span>
+            </div>
+
+            <div class="table-card mb-4">
+                <div class="table-responsive">
+                    <table class="table data-table mb-0 text-center align-middle">
+                        <thead>
+                            <tr>
+                                <th colspan="2" rowspan="2"></th>
+                                <th colspan="3">Impacto</th>
+                            </tr>
+                            <tr>
+                                <th>Bajo</th>
+                                <th>Medio</th>
+                                <th>Alto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th rowspan="3">Probabilidad</th>
+                                <th>Alta</th>
+                                <td class="table-warning">Medio</td>
+                                <td class="table-danger">Alto</td>
+                                <td class="table-danger">Alto</td>
+                            </tr>
+                            <tr>
+                                <th>Media</th>
+                                <td class="table-success">Bajo</td>
+                                <td class="table-warning">Medio</td>
+                                <td class="table-danger">Alto</td>
+                            </tr>
+                            <tr>
+                                <th>Baja</th>
+                                <td class="table-success">Bajo</td>
+                                <td class="table-success">Bajo</td>
+                                <td class="table-warning">Medio</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <input type="hidden" name="risks" id="risks-input" value="[]">
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label" for="risk-description">Descripcion del riesgo <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="risk-description" rows="3" placeholder="Describe el evento que podria afectar al proyecto"></textarea>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="risk-probability">Probabilidad</label>
+                    <select class="form-select" id="risk-probability">
+                        <option value="low">Baja</option>
+                        <option value="medium" selected>Media</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="risk-impact">Impacto</label>
+                    <select class="form-select" id="risk-impact">
+                        <option value="low">Bajo</option>
+                        <option value="medium" selected>Medio</option>
+                        <option value="high">Alto</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="risk-identified-by">Identificado por</label>
+                    <input type="text" class="form-control" id="risk-identified-by" value="{{ request.user.get_full_name|default:request.user.username }}">
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="risk-mitigation">Plan de mitigacion</label>
+                    <textarea class="form-control" id="risk-mitigation" rows="3" placeholder="Indica la accion preventiva o correctiva"></textarea>
+                </div>
+            </div>
+
+            <div class="page-actions mt-4">
+                <button type="button" class="btn btn-primary" onclick="addRisk()">Agregar riesgo</button>
+            </div>
+
+            <div id="risks-list" class="mt-4" aria-live="polite"></div>
+        </section>
+    </div>
+
+    <div class="col-xl-5">
+        <section class="form-section mb-4">
+            <h3 class="section-title">Plan de comunicacion</h3>
+            <p class="text-muted">Define el canal, frecuencia y destinatario para cada comunicacion relevante.</p>
+
+            <input type="hidden" name="communications" id="communications-input" value="[]">
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label" for="comm-type">Tipo de comunicacion</label>
+                    <select class="form-select" id="comm-type">
+                        <option value="email">Email</option>
+                        <option value="reunion">Reunion</option>
+                        <option value="llamada">Llamada</option>
+                        <option value="reporte">Reporte</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="comm-frequency">Frecuencia</label>
+                    <select class="form-select" id="comm-frequency">
+                        <option value="diaria">Diaria</option>
+                        <option value="semanal" selected>Semanal</option>
+                        <option value="quincenal">Quincenal</option>
+                        <option value="mensual">Mensual</option>
+                        <option value="segun_necesidad">Segun necesidad</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="comm-recipient">Destinatario</label>
+                    <input type="text" class="form-control" id="comm-recipient" placeholder="A quien va dirigida la comunicacion">
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="comm-description">Descripcion</label>
+                    <textarea class="form-control" id="comm-description" rows="3" placeholder="Resume el objetivo o mensaje principal"></textarea>
+                </div>
+            </div>
+
+            <div class="page-actions mt-4">
+                <button type="button" class="btn btn-outline-primary" onclick="addCommunication()">Agregar comunicacion</button>
+            </div>
+
+            <div id="communications-list" class="mt-4" aria-live="polite"></div>
+        </section>
+
+        <section class="form-section">
+            <h3 class="section-title">Recomendaciones</h3>
+            <ul class="small mb-0 ps-3">
+                <li>Registra solo riesgos accionables y con impacto concreto.</li>
+                <li>Asocia un plan de mitigacion cuando el riesgo sea medio o alto.</li>
+                <li>Define comunicaciones periodicas para interesados clave.</li>
+                <li>Evita dejar destinatarios vacios en comunicaciones relevantes.</li>
+            </ul>
+        </section>
+    </div>
+</div>
+
+<script>
+let risks = [];
+{% if risks %}
+risks = {{ risks|escapejs }};
+if (risks.length > 0) {
+    updateRisksList();
+}
+{% endif %}
+
+let communications = [];
+{% if communications %}
+communications = {{ communications|escapejs }};
+if (communications.length > 0) {
+    updateCommunicationsList();
+}
+{% endif %}
+
+function addRisk() {
+    const description = document.getElementById('risk-description').value.trim();
+    if (!description) {
+        alert('Describe el riesgo.');
+        return;
+    }
+
+    const risk = {
+        id: 'risk_' + Date.now(),
+        description: description,
+        probability: document.getElementById('risk-probability').value,
+        impact: document.getElementById('risk-impact').value,
+        mitigation_plan: document.getElementById('risk-mitigation').value.trim(),
+        identified_by: document.getElementById('risk-identified-by').value.trim()
+    };
+
+    risks.push(risk);
+    updateRisksList();
+    clearRiskForm();
+}
+
+function removeRisk(id) {
+    risks = risks.filter((risk) => risk.id !== id);
+    updateRisksList();
+}
+
+function updateRisksList() {
+    const list = document.getElementById('risks-list');
+    const input = document.getElementById('risks-input');
+    input.value = JSON.stringify(risks);
+
+    if (risks.length === 0) {
+        list.innerHTML = '<div class="empty-state">Aun no se han agregado riesgos.</div>';
+        return;
+    }
+
+    const probLabels = { low: 'Baja', medium: 'Media', high: 'Alta' };
+    const impactLabels = { low: 'Bajo', medium: 'Medio', high: 'Alto' };
+    const levelLabels = { low: 'Bajo', medium: 'Medio', high: 'Alto' };
+
+    list.innerHTML = risks.map((risk) => {
+        const level = (risk.probability === 'high' || risk.impact === 'high')
+            ? 'high'
+            : ((risk.probability === 'medium' || risk.impact === 'medium') ? 'medium' : 'low');
+        const chipClass = level === 'high' ? 'text-bg-danger' : (level === 'medium' ? 'text-bg-warning' : 'text-bg-success');
+
+        return `
+            <article class="form-section mb-3">
+                <div class="page-toolbar mb-2">
+                    <div>
+                        <h4 class="h6 mb-1">${risk.description}</h4>
+                        <div class="small text-muted">Registrado por ${risk.identified_by || 'Usuario actual'}</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeRisk('${risk.id}')">Quitar</button>
+                </div>
+                <div class="page-actions mb-2">
+                    <span class="badge ${chipClass}">Nivel ${levelLabels[level]}</span>
+                    <span class="badge text-bg-light border">Probabilidad: ${probLabels[risk.probability]}</span>
+                    <span class="badge text-bg-light border">Impacto: ${impactLabels[risk.impact]}</span>
+                </div>
+                ${risk.mitigation_plan ? `<div class="small text-muted">Mitigacion: ${risk.mitigation_plan}</div>` : ''}
+            </article>
+        `;
+    }).join('');
+}
+
+function clearRiskForm() {
+    document.getElementById('risk-description').value = '';
+    document.getElementById('risk-mitigation').value = '';
+}
+
+function addCommunication() {
+    const recipient = document.getElementById('comm-recipient').value.trim();
+    const description = document.getElementById('comm-description').value.trim();
+
+    if (!recipient && !description) {
+        alert('Completa al menos un campo para la comunicacion.');
+        return;
+    }
+
+    const communication = {
+        id: 'comm_' + Date.now(),
+        type: document.getElementById('comm-type').value,
+        frequency: document.getElementById('comm-frequency').value,
+        recipient: recipient,
+        description: description
+    };
+
+    communications.push(communication);
+    updateCommunicationsList();
+    clearCommunicationForm();
+}
+
+function removeCommunication(id) {
+    communications = communications.filter((communication) => communication.id !== id);
+    updateCommunicationsList();
+}
+
+function updateCommunicationsList() {
+    const list = document.getElementById('communications-list');
+    const input = document.getElementById('communications-input');
+    input.value = JSON.stringify(communications);
+
+    if (communications.length === 0) {
+        list.innerHTML = '<div class="empty-state">Aun no se han agregado comunicaciones.</div>';
+        return;
+    }
+
+    const typeLabels = {
+        email: 'Email',
+        reunion: 'Reunion',
+        llamada: 'Llamada',
+        reporte: 'Reporte'
+    };
+    const freqLabels = {
+        diaria: 'Diaria',
+        semanal: 'Semanal',
+        quincenal: 'Quincenal',
+        mensual: 'Mensual',
+        segun_necesidad: 'Segun necesidad'
+    };
+
+    list.innerHTML = communications.map((communication) => `
+        <article class="form-section mb-3">
+            <div class="page-toolbar mb-2">
+                <div>
+                    <h4 class="h6 mb-1">${typeLabels[communication.type]}${communication.recipient ? ' para ' + communication.recipient : ''}</h4>
+                    <div class="small text-muted">${freqLabels[communication.frequency]}</div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCommunication('${communication.id}')">Quitar</button>
+            </div>
+            ${communication.description ? `<div class="small text-muted">${communication.description}</div>` : ''}
+        </article>
+    `).join('');
+}
+
+function clearCommunicationForm() {
+    document.getElementById('comm-recipient').value = '';
+    document.getElementById('comm-description').value = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateRisksList();
+    updateCommunicationsList();
+});
+</script>

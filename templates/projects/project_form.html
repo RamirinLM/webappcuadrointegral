@@ -1,65 +1,79 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}
-    {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
-{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar proyecto{% else %}Crear proyecto{% endif %}{% endblock %}
+{% block page_heading %}{% if form.instance.pk %}Editar proyecto{% else %}Crear proyecto{% endif %}{% endblock %}
+{% block page_summary %}Registra la informacion base del proyecto y, si aplica, su acta de constitucion.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-5 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);
-            font-family:'Segoe UI','Helvetica Neue',sans-serif;
-            max-width:900px;">
-
-    <!-- Logo superior -->
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/project_logo.png' %}"  
-             alt="Proyecto"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:120px;">
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Configuracion del proyecto</h2>
+            <p class="text-muted mb-0">Completa los datos del proyecto y el acta de constitucion para dejarlo listo para planificacion y seguimiento.</p>
+        </div>
+        <span class="status-chip">{% if form.instance.pk %}Edicion{% else %}Nuevo proyecto{% endif %}</span>
     </div>
 
-    <!-- Título -->
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2.2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        {% if form.instance.pk %}Editar Proyecto{% else %}Crear Proyecto{% endif %}
-    </h1>
-
-    <!-- Formulario -->
-    <form method="post" class="needs-validation text-start">
+    <form method="post" novalidate>
         {% csrf_token %}
-        <div class="p-4 bg-white rounded shadow-sm mb-4 border border-light">
-            {% for field in form %}
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-12 {% if acta_form %}col-xl-7{% endif %}">
+                <section class="form-section h-100">
+                    <h3 class="section-title">Datos del proyecto</h3>
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'description' %}col-12{% else %}col-md-6{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
-                    <div class="col-sm-9">
-                        {{ field }}
+                </section>
+            </div>
+
+            {% if acta_form %}
+            <div class="col-12 col-xl-5">
+                <section class="form-section h-100">
+                    <h3 class="section-title">Acta de constitucion</h3>
+                    <div class="row g-3">
+                        {% for field in acta_form %}
+                        <div class="col-12">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-semibold">
+                                {{ field.label }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ field }}
+                            {% if field.help_text %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </div>
-                </div>
-            {% endfor %}
+                </section>
+            </div>
+            {% endif %}
         </div>
 
-        <!-- Botones -->
-        <div class="d-flex justify-content-center gap-4 mt-4">
-            <button type="submit"  
-                    class="btn fw-bold px-5 py-2 shadow-sm rounded-pill"
-                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-                Guardar
-            </button>
-            <a href="{% url 'project_list' %}"  
-               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
-               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-                Cancelar
-            </a>
-            <!-- Botón de regresar -->
-            <a href="javascript:history.back()"  
-               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
-               style="background-color:#ccc; color:#000; border:2px solid #004c99;">
-                ⬅️ Regresar
-            </a>
+        <div class="page-actions justify-content-end mt-4">
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
+            <a href="{% url 'project_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar proyecto</button>
         </div>
     </form>
-</div>
+</section>
 {% endblock %}

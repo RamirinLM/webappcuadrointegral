@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Solicitudes de cambio{% endblock %}
+{% block page_heading %}Solicitudes de cambio{% endblock %}
+{% block page_summary %}Monitorea solicitudes, impacto estimado y decisiones de aprobacion.{% endblock %}
+
+{% block content %}
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Historial de cambios</h2>
+            <p class="text-muted mb-0">Los jefes departamentales pueden aprobar o rechazar solicitudes pendientes.</p>
+        </div>
+        <a href="{% url 'change_request_create' %}" class="btn btn-primary">Nueva solicitud</a>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Proyecto</th>
+                        <th>Solicitado por</th>
+                        <th>Descripcion</th>
+                        <th>Estado</th>
+                        <th>Impacto</th>
+                        <th>Fecha</th>
+                        {% if is_jefe_departamental %}<th>Acciones</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cr in change_requests %}
+                    <tr>
+                        <td>{{ cr.project.name }}</td>
+                        <td>{{ cr.requested_by.get_full_name|default:cr.requested_by.username }}</td>
+                        <td>{{ cr.description|truncatechars:80 }}</td>
+                        <td><span class="status-chip">{{ cr.get_status_display }}</span></td>
+                        <td>{{ cr.get_impact_assessment }}</td>
+                        <td>{{ cr.created_at|date:"d/m/Y" }}</td>
+                        {% if is_jefe_departamental %}
+                        <td class="text-nowrap">
+                            {% if cr.status == 'pending' %}
+                            <a href="{% url 'change_request_approve' cr.pk %}" class="btn btn-sm btn-outline-success">Aprobar</a>
+                            <a href="{% url 'change_request_reject' cr.pk %}" class="btn btn-sm btn-outline-danger">Rechazar</a>
+                            {% else %}
+                            <span class="text-muted">Sin acciones</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{% if is_jefe_departamental %}7{% else %}6{% endif %}" class="empty-state">No hay solicitudes de cambio registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+{% endblock %}

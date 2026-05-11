@@ -1,65 +1,210 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}
-    {% if form.instance.pk %}Editar Actividad{% else %}Crear Actividad{% endif %}
-{% endblock %}
+{% block title %}{% if form.instance.pk %}Editar actividad{% else %}Crear actividad{% endif %}{% endblock %}
+{% block page_heading %}{% if form.instance.pk %}Editar actividad{% else %}Crear actividad{% endif %}{% endblock %}
+{% block page_summary %}Define fechas planificadas y registra la ejecucion real para calcular variaciones.{% endblock %}
 
 {% block content %}
-<div class="container my-5 p-5 shadow-lg rounded"
-     style="background:linear-gradient(180deg,#e3f2fd 0%,#fff 100%);
-            font-family:'Segoe UI','Helvetica Neue',sans-serif;
-            max-width:700px;">
-
-    <!-- Logo superior -->
-    <div class="text-center mb-4">
-        <img src="{% static 'projects/images/activity_logo.png' %}"  
-             alt="Logo Actividad"  
-             class="img-fluid rounded shadow-sm"  
-             style="max-height:120px;">
+<section class="page-card">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">{% if form.instance.pk %}Editar{% else %}Nueva{% endif %} actividad</h2>
+            <p class="text-muted mb-0">La <strong>planificacion</strong> define tu linea base. El <strong>seguimiento</strong> registra lo que realmente ocurrio.</p>
+        </div>
+        <span class="status-chip">{{ form.instance.get_status_display|default:"Nueva" }}</span>
     </div>
 
-    <!-- Título -->
-    <h1 class="mb-4 fw-bold text-center"
-        style="font-size:2rem; color:#004c99; letter-spacing:1px; text-transform:uppercase;">
-        {% if form.instance.pk %}Editar Actividad{% else %}Crear Actividad{% endif %}
-    </h1>
-
-    <!-- Formulario -->
-    <form method="post" class="needs-validation text-start">
+    <form method="post" id="activity-form" novalidate>
         {% csrf_token %}
-        <div class="p-4 bg-white rounded shadow-sm mb-4 border border-light">
-            {% for field in form %}
-                <div class="row mb-3">
-                    <div class="col-sm-3">
-                        <label for="{{ field.id_for_label }}" class="form-label fw-bold">{{ field.label }}</label>
-                    </div>
-                    <div class="col-sm-9">
-                        {{ field }}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-4">
+            {# ── Columna principal ── #}
+            <div class="col-lg-8">
+
+                {# --- Datos generales --- #}
+                <div class="form-section">
+                    <h3 class="section-title">Datos generales</h3>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            {% include "projects/_field.html" with field=form.name %}
+                        </div>
+                        <div class="col-12">
+                            {% include "projects/_field.html" with field=form.description %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.project %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.status %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.assigned_to %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.predecessor %}
+                        </div>
                     </div>
                 </div>
-            {% endfor %}
+
+                {# --- Planificación (línea base) --- #}
+                <div class="form-section">
+                    <h3 class="section-title">Planificacion <span class="badge bg-info ms-2">Linea base</span></h3>
+                    <p class="text-muted small mb-3">Estos valores definen lo que <strong>planificaste</strong>. No cambian durante el seguimiento.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.start_date %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.end_date %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.cost %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.time_estimate %}
+                        </div>
+                    </div>
+                </div>
+
+                {# --- Seguimiento (datos reales) --- #}
+                <div class="form-section">
+                    <h3 class="section-title">Ejecucion real <span class="badge bg-warning text-dark ms-2">Seguimiento</span></h3>
+                    <p class="text-muted small mb-3">Registra lo que <strong>realmente</strong> ocurrio. Solo completa estos campos durante o despues de la ejecucion.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.actual_start_date %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.actual_end_date %}
+                        </div>
+                        <div class="col-md-6">
+                            {% include "projects/_field.html" with field=form.actual_cost %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Columna lateral ── #}
+            <div class="col-lg-4">
+                <div class="form-section h-100">
+                    <h3 class="section-title">Resumen de variacion</h3>
+                    {% if form.instance.pk %}
+                        <dl class="small mb-0">
+                            <dt>Cronograma:</dt>
+                            <dd class="fw-bold">
+                                {% with sv=form.instance.schedule_variance_days %}
+                                    {% if sv is None %}
+                                        <span class="text-muted">Sin datos reales</span>
+                                    {% elif sv < 0 %}
+                                        <span class="text-danger">{{ sv }} dia{{ sv|pluralize }} de atraso</span>
+                                    {% elif sv > 0 %}
+                                        <span class="text-success">+{{ sv }} dia{{ sv|pluralize }} adelantado</span>
+                                    {% else %}
+                                        <span class="text-muted">En linea</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </dd>
+                            <dt>Presupuesto:</dt>
+                            <dd class="fw-bold">
+                                {% with cv=form.instance.cost_variance %}
+                                    {% if cv is None %}
+                                        <span class="text-muted">Sin datos reales</span>
+                                    {% elif cv < 0 %}
+                                        <span class="text-danger">${{ cv|floatformat:2 }} de sobrecosto</span>
+                                    {% elif cv > 0 %}
+                                        <span class="text-success">+${{ cv|floatformat:2 }} de ahorro</span>
+                                    {% else %}
+                                        <span class="text-muted">En presupuesto</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </dd>
+                        </dl>
+                        <hr>
+                        <div class="small text-muted">
+                            {% with act_start=form.instance.actual_start_date act_end=form.instance.actual_end_date %}
+                                {% if act_start or act_end %}
+                                    <p class="mb-1"><strong>Escenario:</strong>
+                                    {% if act_start and act_start == form.instance.start_date and act_end and act_end == form.instance.end_date %}
+                                        <span class="text-success">Cumplido en fecha planificada</span>
+                                    {% elif act_start and act_start > form.instance.start_date and act_end and act_end > form.instance.end_date %}
+                                        <span class="text-danger">Inicio y fin tardio</span>
+                                    {% elif act_start and act_start == form.instance.start_date and act_end and act_end > form.instance.end_date %}
+                                        <span class="text-danger">Inicio a tiempo, finalizacion tardia</span>
+                                    {% elif act_start and act_start < form.instance.start_date and act_end and act_end <= form.instance.end_date %}
+                                        <span class="text-success">Inicio anticipado, finalizacion a tiempo o antes</span>
+                                    {% elif act_start and act_end and act_end < form.instance.end_date %}
+                                        <span class="text-success">Finalizacion anticipada</span>
+                                    {% elif act_start and act_start > form.instance.start_date %}
+                                        <span class="text-warning">Inicio tardio</span>
+                                    {% endif %}
+                                    </p>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted small">Primero guarda la actividad para ver el resumen de variacion.</p>
+                    {% endif %}
+                </div>
+
+                <div class="form-section mt-3">
+                    <h3 class="section-title">Consejos</h3>
+                    <ul class="small mb-0 ps-3">
+                        <li>La <strong>linea base</strong> son fechas y costos planificados.</li>
+                        <li>El <strong>seguimiento</strong> son fechas y costos reales.</li>
+                        <li>Llena los campos de seguimiento SOLO cuando tengas datos reales.</li>
+                        <li>Para hacer seguimiento de varias actividades a la vez, usa <strong>Linea Base</strong> desde el detalle del proyecto.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
 
-        <!-- Botones -->
-        <div class="d-flex justify-content-center gap-4 mt-4 flex-wrap">
-            <button type="submit"  
-                    class="btn fw-bold px-5 py-2 shadow-sm rounded-pill"
-                    style="background-color:#4fc3f7; color:#000; border:2px solid #004c99;">
-                💾 Guardar
-            </button>
-            <a href="{% url 'activity_list' %}"  
-               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
-               style="background-color:#ffd600; color:#000; border:2px solid #004c99;">
-                ❌ Cancelar
-            </a>
-            <!-- Botón de regresar -->
-            <a href="javascript:history.back()"  
-               class="btn fw-semibold px-5 py-2 shadow-sm rounded-pill"
-               style="background-color:#ccc; color:#000; border:2px solid #004c99;">
-                ⬅️ Regresar
-            </a>
+        <div class="page-actions justify-content-end mt-4">
+            <a href="{% url 'activity_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Guardar cambios{% else %}Crear actividad{% endif %}</button>
         </div>
     </form>
-</div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const els = {
+        start: document.getElementById("id_start_date"),
+        end: document.getElementById("id_end_date"),
+        actualStart: document.getElementById("id_actual_start_date"),
+        actualEnd: document.getElementById("id_actual_end_date"),
+    };
+    const form = document.getElementById("activity-form");
+
+    function validate() {
+        let ok = true;
+        Object.values(els).forEach(el => { if (el) el.classList.remove("is-invalid"); });
+
+        if (els.start && els.end && els.start.value && els.end.value && els.start.value > els.end.value) {
+            els.end.classList.add("is-invalid"); ok = false;
+        }
+        if (els.actualStart && els.actualEnd && els.actualStart.value && els.actualEnd.value && els.actualStart.value > els.actualEnd.value) {
+            els.actualEnd.classList.add("is-invalid"); ok = false;
+        }
+        return ok;
+    }
+
+    Object.values(els).forEach(el => { if (el) el.addEventListener("change", validate); });
+
+    if (els.start && els.end) {
+        els.start.addEventListener("change", () => { els.end.min = els.start.value || ""; });
+    }
+    if (els.actualStart && els.actualEnd) {
+        els.actualStart.addEventListener("change", () => { els.actualEnd.min = els.actualStart.value || ""; });
+    }
+
+    if (form) {
+        form.addEventListener("submit", e => { if (!validate()) { e.preventDefault(); alert("Revise las fechas."); } });
+    }
+});
+</script>
 {% endblock %}

@@ -1,200 +1,179 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Tablero - CMI GAD Celica{% endblock %}
+{% block title %}Tablero{% endblock %}
+{% block page_heading %}Tablero de control{% endblock %}
+{% block page_summary %}Resumen operativo de proyectos, tareas pendientes y actividad reciente del sistema.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .traffic-light {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+    .traffic-light.green {
+        background: #d4edda;
+        color: #155724;
+    }
+    .traffic-light.yellow {
+        background: #fff3cd;
+        color: #856404;
+    }
+    .traffic-light.red {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    .traffic-light.gray {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+    .traffic-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+    }
+    .traffic-light.green .traffic-dot { background: #28a745; }
+    .traffic-light.yellow .traffic-dot { background: #ffc107; }
+    .traffic-light.red .traffic-dot { background: #dc3545; }
+    .traffic-light.gray .traffic-dot { background: #6c757d; }
+</style>
+{% endblock %}
 
 {% block content %}
-<style>
-    .welcome-banner {
-        background: linear-gradient(90deg, #cceeff, #e6f7ff);
-        color: #004c99;
-        padding: 25px;
-        border-radius: 12px;
-        margin-bottom: 25px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        font-family: 'Segoe UI', sans-serif;
-        text-align: center;
-    }
-    .alert-card {
-        background-color: #fffbea;
-        border: 1px solid #ffeeba;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.08);
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .alert-card h4 {
-        color: #856404;
-        font-weight: bold;
-        margin-bottom: 10px;
-    }
-    .list-group-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-family: 'Segoe UI', sans-serif;
-        padding: 12px 20px;
-    }
-    .list-group-item a {
-        text-decoration: none;
-        color: #004c99;
-        font-weight: 500;
-    }
-    .list-group-item a:hover {
-        text-decoration: underline;
-    }
-    .btn-custom {
-        font-weight: bold;
-        box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-        margin: 5px;
-        border-radius: 25px;
-        padding: 10px 20px;
-        display: inline-block;
-    }
-    .badge-info-custom {
-        background-color: #00b4d8;
-        color: white;
-    }
-    .traffic-light {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
-    }
-    .traffic-green { background-color: #28a745; }
-    .traffic-yellow { background-color: #ffc107; }
-    .traffic-red { background-color: #dc3545; }
-    .traffic-gray { background-color: #6c757d; }
-    .progress-mini {
-        height: 6px;
-        border-radius: 3px;
-    }
-</style>
-
-<div class="text-center mb-4">
-    <img src="{% static 'logo.png' %}"  
-         alt="Logo Tablero"  
-         class="img-fluid rounded shadow-sm"  
-         style="max-height:100px; border: 2px solid #004c99;">
-</div>
-
-<div class="welcome-banner">
-    <h2>¡Bienvenido, {{ user.username }}!</h2>
-    <p class="mb-0"><strong>Rol en el Sistema:</strong> {{ user_role|default:"Usuario" }}</p>
-</div>
-
-<div class="row">
-    <div class="col-md-4">
-        <div class="alert-card text-center">
-            <h4>Proyectos Activos</h4>
-            <h2 class="display-6 fw-bold text-primary">{{ active_projects|length }}</h2>
-            <hr>
-            {% for project in active_projects|slice:":3" %}
-                <div class="small mb-1"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></div>
-            {% empty %}
-                <p class="small italic">No hay proyectos activos.</p>
-            {% endfor %}
+<section class="page-card mb-4">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">Bienvenido, {{ user.get_full_name|default:user.username }}</h2>
+            <p class="text-muted mb-0">Rol activo: {{ user_role|default:"Usuario" }}</p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'project_wizard' %}" class="btn btn-primary">Nuevo proyecto</a>
+            <a href="{% url 'seguimiento_list' %}" class="btn btn-outline-secondary">Seguimiento por proyecto</a>
         </div>
     </div>
 
-    <div class="col-md-4">
-        <div class="alert-card text-center">
-            <h4>Tareas Pendientes</h4>
-            <h2 class="display-6 fw-bold text-danger">{{ pending_tasks|length }}</h2>
-            <hr>
-            {% for task in pending_tasks|slice:":3" %}
-                <div class="small mb-1 text-truncate">{{ task.name }}</div>
-            {% empty %}
-                <p class="small italic">Todo al día.</p>
-            {% endfor %}
+    <div class="metric-grid">
+        <div class="metric-card">
+            <div class="metric-label">Proyectos activos</div>
+            <div class="metric-value">{{ active_projects|length }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Tareas pendientes</div>
+            <div class="metric-value">{{ pending_tasks|length }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Reportes recientes</div>
+            <div class="metric-value">{{ latest_reports|length }}</div>
         </div>
     </div>
+</section>
 
-    <div class="col-md-4">
-        <div class="alert-card text-center">
-            <h4>Últimos Reportes</h4>
-            <h2 class="display-6 fw-bold text-success">{{ latest_reports|length }}</h2>
-            <hr>
-            {% for report in latest_reports|slice:":2" %}
-                <div class="small mb-1 text-truncate">
-                    <strong>{{ report.proyecto.name }}</strong> ({{ report.fecha|date:"d/m/y" }})
+<div class="row g-4">
+    <div class="col-12 col-xl-8">
+        <section class="page-card h-100">
+            <div class="page-toolbar">
+                <div>
+                    <h2 class="section-title mb-1">Estado de proyectos</h2>
+                    <p class="text-muted mb-0">Avance, semaforo y accesos rapidos por proyecto.</p>
                 </div>
-            {% empty %}
-                <p class="small italic">Sin reportes este mes.</p>
-            {% endfor %}
-        </div>
-    </div>
-</div>
+                <a href="{% url 'project_list' %}" class="btn btn-outline-primary">Ver todos</a>
+            </div>
 
-<div class="row mt-3">
-    <div class="col-md-8 mb-4">
-        <h3 class="text-primary fw-bold mb-3">📂 Listado de Proyectos</h3>
-        <div class="card shadow-sm border-0">
-            <ul class="list-group list-group-flush">
-                {% for item in projects_with_status %}
-                    <li class="list-group-item">
-                        <div class="flex-grow-1">
-                            <a href="{% url 'project_detail' item.project.pk %}">{{ item.project.name }}</a>
-                            <div class="progress progress-mini mt-1" style="width: 100px;">
-                                <div class="progress-bar bg-success" style="width: {{ item.progress }}%;"></div>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="traffic-light traffic-{{ item.traffic_light }}"></span>
-                            <span class="badge bg-light text-dark border">{{ item.project.get_status_display }}</span>
-                            <a href="{% url 'project_financial_summary' item.project.pk %}" class="btn btn-sm btn-outline-info" title="Resumen Financiero">
-                                💰
-                            </a>
-                        </div>
-                    </li>
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table data-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Proyecto</th>
+                                <th>Semáforo</th>
+                                <th>Estado</th>
+                                <th>Avance</th>
+                                <th>Presupuesto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in projects_with_status %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.project.name }}</strong>
+                                    <div class="small text-muted">{{ item.project.start_date|date:"d/m/Y" }} - {{ item.project.end_date|date:"d/m/Y" }}</div>
+                                </td>
+                                <td>
+                                    <span class="traffic-light {{ item.traffic_light }}">
+                                        <span class="traffic-dot"></span>
+                                        {% if item.traffic_light == 'green' %}En línea
+                                        {% elif item.traffic_light == 'yellow' %}Atención
+                                        {% elif item.traffic_light == 'red' %}Crítico
+                                        {% else %}Sin datos{% endif %}
+                                    </span>
+                                </td>
+                                <td><span class="status-chip">{{ item.project.get_status_display }}</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px; min-width: 60px;">
+                                            <div class="progress-bar bg-success" style="width: {{ item.progress }}%"></div>
+                                        </div>
+                                        <span class="small">{{ item.progress }}%</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px; min-width: 60px;">
+                                            <div class="progress-bar {% if item.budget_utilization > 90 %}bg-danger{% elif item.budget_utilization > 75 %}bg-warning{% else %}bg-info{% endif %}" style="width: {{ item.budget_utilization }}%"></div>
+                                        </div>
+                                        <span class="small">{{ item.budget_utilization }}%</span>
+                                    </div>
+                                </td>
+                                <td class="text-nowrap">
+                                    <a href="{% url 'project_detail' item.project.pk %}" class="btn btn-sm btn-outline-primary">Detalle</a>
+                                    <a href="{% url 'project_financial_summary' item.project.pk %}" class="btn btn-sm btn-outline-secondary">Finanzas</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="empty-state">Todavia no hay proyectos visibles para este usuario.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <section class="page-card mb-4">
+            <h2 class="section-title">Tareas pendientes</h2>
+            <div class="list-group list-group-flush">
+                {% for task in pending_tasks|slice:":5" %}
+                <div class="list-group-item px-0">
+                    <strong>{{ task.name }}</strong>
+                    <div class="small text-muted">{{ task.project.name }}</div>
+                </div>
                 {% empty %}
-                    <li class="list-group-item text-center py-4">
-                        <p class="mb-2 text-muted">Aún no has creado proyectos.</p>
-                        <a href="{% url 'project_create' %}" class="btn btn-sm btn-outline-primary">Crear mi primer proyecto</a>
-                    </li>
+                <div class="empty-state py-3">No hay tareas pendientes.</div>
                 {% endfor %}
-            </ul>
-        </div>
-    </div>
+            </div>
+        </section>
 
-    <div class="col-md-4 mb-4">
-        <h3 class="text-warning fw-bold mb-3">⚡ Acciones Rápidas</h3>
-        <div class="d-grid gap-2">
-            <a href="{% url 'project_create' %}" class="btn btn-info text-dark btn-custom">
-                ➕ Nuevo Proyecto
-            </a>
-            <a href="{% url 'activity_create' %}" class="btn btn-secondary text-white btn-custom">
-                📌 Agregar Actividad
-            </a>
-            <a href="{% url 'milestone_create' %}" class="btn btn-primary text-white btn-custom">
-                🎯 Registrar Hito
-            </a>
-            <a href="{% url 'seguimiento_list' %}" class="btn btn-warning text-dark btn-custom">
-                📊 Gestión de Seguimientos
-            </a>
-        </div>
-        
-        <div class="mt-4 p-3 bg-white rounded shadow-sm">
-            <h6 class="text-muted mb-2">Leyenda Semáforo CMI</h6>
-            <div class="d-flex align-items-center mb-1">
-                <span class="traffic-light traffic-green"></span>
-                <small>En tiempo y presupuesto</small>
+        <section class="page-card">
+            <h2 class="section-title">Ultimos reportes</h2>
+            <div class="list-group list-group-flush">
+                {% for report in latest_reports %}
+                <div class="list-group-item px-0">
+                    <strong>{{ report.proyecto.name }}</strong>
+                    <div class="small text-muted">{{ report.fecha|date:"d/m/Y" }}</div>
+                </div>
+                {% empty %}
+                <div class="empty-state py-3">No hay reportes recientes.</div>
+                {% endfor %}
             </div>
-            <div class="d-flex align-items-center mb-1">
-                <span class="traffic-light traffic-yellow"></span>
-                <small>Atención requerida</small>
-            </div>
-            <div class="d-flex align-items-center mb-1">
-                <span class="traffic-light traffic-red"></span>
-                <small>Crítico</small>
-            </div>
-            <div class="d-flex align-items-center">
-                <span class="traffic-light traffic-gray"></span>
-                <small>Sin datos</small>
-            </div>
-        </div>
+        </section>
     </div>
 </div>
 {% endblock %}

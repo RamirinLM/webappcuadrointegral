@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Error interno{% endblock %}
+{% block page_heading %}Error interno del sistema{% endblock %}
+{% block page_summary %}Ocurrio un problema inesperado al procesar la solicitud.{% endblock %}
+
+{% block content %}
+<section class="content-card p-4 p-lg-5 text-center">
+    <h2 class="h3 mb-3">El sistema no pudo completar la operacion.</h2>
+    <p class="text-muted mb-4">La incidencia fue registrada. Intenta nuevamente o vuelve a una vista principal mientras se revisa el problema.</p>
+    <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a class="btn btn-primary" href="{% url 'dashboard' %}">Ir al tablero</a>
+        <a class="btn btn-outline-secondary" href="{% url 'project_list' %}">Ver proyectos</a>
+    </div>
+</section>
+{% endblock %}
