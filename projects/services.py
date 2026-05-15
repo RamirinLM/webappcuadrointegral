@@ -148,3 +148,55 @@ def export_project_csv(project: Project, activities) -> HttpResponse:
     for activity in activities:
         writer.writerow([activity.name, activity.status, activity.cost, activity.start_date, activity.end_date])
     return response
+
+
+# ── Cortes del proyecto (períodos de revisión) ────────────────────────────
+
+def generate_project_cuts(project, interval_days: int = 90):
+    """
+    Genera (o regenera) los cortes de un proyecto dividiendo su duración
+    en períodos de 'interval_days' días.
+
+    1. Elimina los cortes existentes.
+    2. Divide el rango [start_date, end_date] en segmentos iguales.
+    3. Crea un ProjectCut por segmento.
+
+    Retorna la lista de ProjectCut creados.
+    """
+    from datetime import timedelta
+    from .models import ProjectCut
+
+    project.cuts.all().delete()
+
+    start = project.start_date
+    end = project.end_date
+    if not start or not end or start > end:
+        return []
+
+    delta = timedelta(days=interval_days)
+    cuts = []
+    current_start = start
+    period_num = 1
+
+    while current_start <= end:
+        current_end = min(current_start + delta - timedelta(days=1), end)
+
+        if interval_days >= 80:
+            name = f"Trimestre {period_num}"
+        elif interval_days >= 25:
+            name = f"Mes {period_num}"
+        else:
+            name = f"Periodo {period_num}"
+
+        cuts.append(ProjectCut(
+            project=project,
+            name=name,
+            start_date=current_start,
+            end_date=current_end,
+            sort_order=period_num,
+        ))
+        current_start = current_end + timedelta(days=1)
+        period_num += 1
+
+    ProjectCut.objects.bulk_create(cuts)
+    return list(project.cuts.all().order_by('sort_order'))

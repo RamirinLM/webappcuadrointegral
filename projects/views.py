@@ -23,11 +23,17 @@ from .models import (
     Milestone,
     Notification,
     Project,
+    ProjectCut,
     Seguimiento,
     ActaConstitucion,
 )
 from .permissions import can_edit_project, can_view_project, get_user_projects, is_jefe_departamental
-from .services import create_project_with_acta, set_project_modified_if_needed, transition_project_approval
+from .services import (
+    create_project_with_acta,
+    generate_project_cuts,
+    set_project_modified_if_needed,
+    transition_project_approval,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -694,3 +700,118 @@ def notification_mark_read(request, pk):
         return render_schema_mismatch(request)
     messages.success(request, "Notificacion marcada como leida.")
     return redirect("notification_list")
+
+
+# ── Cortes del proyecto (períodos de revisión) ────────────────────────────
+
+@login_required
+def project_cuts(request, project_id):
+    """
+    Vista de cortes del proyecto: muestra la línea de tiempo dividida en
+    períodos (trimestres) con métricas agregadas (planificado vs real).
+
+    - GET: muestra los cortes existentes + formulario para generar/regenerar
+    - POST: guarda nuevos parámetros de intervalo y regenera los cortes
+    """
+    project = get_object_or_404(Project, pk=project_id)
+    if not can_view_project(request.user, project):
+        messages.error(request, "No tienes permisos para ver este proyecto.")
+        return redirect("project_list")
+
+    interval = request.POST.get("interval", "90")
+
+    if request.method == "POST" and "generate" in request.POST:
+        try:
+            interval_days = int(interval)
+            if interval_days < 1:
+                raise ValueError
+        except (ValueError, TypeError):
+            interval_days = 90
+            interval = "90"
+
+        generate_project_cuts(project, interval_days=interval_days)
+        messages.success(
+            request,
+            f"Cortes generados cada {interval_days} días para '{project.name}'."
+        )
+        return redirect("project_cuts", project_id=project.pk)
+
+    if request.method == "POST" and "delete_cut" in request.POST:
+        cut_id = request.POST.get("cut_id")
+        if cut_id:
+            ProjectCut.objects.filter(pk=cut_id, project=project).delete()
+            messages.success(request, "Corte eliminado.")
+        return redirect("project_cuts", project_id=project.pk)
+
+    if request.method == "POST" and "update_cut" in request.POST:
+        cut_id = request.POST.get("cut_id")
+        name = request.POST.get("cut_name", "").strip()
+        start = request.POST.get("cut_start", "").strip()
+        end = request.POST.get("cut_end", "").strip()
+        if cut_id:
+            cut = get_object_or_404(ProjectCut, pk=cut_id, project=project)
+            if name:
+                cut.name = name
+            if start:
+                from datetime import date
+                try:
+                    cut.start_date = date.fromisoformat(start)
+                except ValueError:
+                    pass
+            if end:
+                from datetime import date
+                try:
+                    cut.end_date = date.fromisoformat(end)
+                except ValueError:
+                    pass
+            cut.save()
+            messages.success(request, f"Corte '{cut.name}' actualizado.")
+        return redirect("project_cuts", project_id=project.pk)
+
+    # ── GET: mostrar cortes ──
+    cuts = project.cuts.all().order_by("sort_order")
+
+    # Totales acumulados del proyecto
+    from decimal import Decimal
+    total_planned_cost = Decimal("0")
+    total_ev = Decimal("0")
+    total_ac = Decimal("0")
+    for cut in cuts:
+        total_planned_cost += cut.planned_cost
+        total_ev += cut.ev
+        total_ac += cut.ac
+
+    if total_planned_cost > 0:
+        overall_spi = total_ev / total_planned_cost
+    else:
+        overall_spi = Decimal("0")
+    if total_ac > 0:
+        overall_cpi = total_ev / total_ac
+    else:
+        overall_cpi = Decimal("0")
+
+    # Traducción a colores Bootstrap para el template
+    STATUS_BOOTSTRAP = {
+        "green": "success",
+        "yellow": "warning",
+        "red": "danger",
+        "no_data": "secondary",
+    }
+
+    return render(
+        request,
+        "projects/project_cuts.html",
+        {
+            "project": project,
+            "cuts": cuts,
+            "interval": interval,
+            "has_cuts": cuts.exists(),
+            "total_planned_cost": total_planned_cost,
+            "total_ev": total_ev,
+            "total_ac": total_ac,
+            "overall_spi": overall_spi,
+            "overall_cpi": overall_cpi,
+            "status_bootstrap": STATUS_BOOTSTRAP,
+            "can_edit": can_edit_project(request.user, project),
+        },
+    )

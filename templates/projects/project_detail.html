@@ -44,6 +44,7 @@
             <a href="{% url 'project_edit' project.pk %}" class="btn btn-outline-primary">Editar</a>
             {% endif %}
             <a href="{% url 'linea_base_seguimiento' project.pk %}" class="btn btn-primary">Linea base y seguimiento</a>
+            <a href="{% url 'project_cuts' project.pk %}" class="btn btn-outline-primary">Cortes del proyecto</a>
             <a href="{% url 'project_financial_summary' project.pk %}" class="btn btn-outline-secondary">Resumen financiero</a>
         </div>
     </div>

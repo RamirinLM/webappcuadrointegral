@@ -1,0 +1,478 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cortes del proyecto — {{ project.name }}{% endblock %}
+{% block page_heading %}Cortes del proyecto{% endblock %}
+{% block page_summary %}Visión por períodos: planificado vs real agregado por trimestre o período de revisión.{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cut-card {
+        transition: box-shadow .15s ease;
+    }
+    .cut-card:hover {
+        box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    }
+    .cut-status-indicator {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .cut-title {
+        font-size: .95rem;
+        font-weight: 600;
+    }
+    .cut-period {
+        font-size: .8rem;
+        color: var(--cmi-muted);
+    }
+    .metric-box {
+        background: var(--cmi-bg);
+        border-radius: 8px;
+        padding: .5rem .75rem;
+        text-align: center;
+        min-width: 80px;
+    }
+    .metric-box .value {
+        font-size: 1.05rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .metric-box .label {
+        font-size: .65rem;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        color: var(--cmi-muted);
+        margin-top: 2px;
+    }
+    .metric-box .value.positive { color: #28a745; }
+    .metric-box .value.negative { color: #dc3545; }
+    .metric-box .value.zero     { color: var(--cmi-muted); }
+
+    .cut-detail-row {
+        background: #fafbfc;
+    }
+    .cut-detail-row td {
+        padding: .25rem .5rem !important;
+        font-size: .82rem;
+    }
+    .cut-detail-row td:first-child {
+        padding-left: 2rem !important;
+    }
+    .cut-summary-row td {
+        border-bottom-width: 2px !important;
+        font-weight: 600;
+        background: #f0f3f5;
+    }
+    .evm-label {
+        font-size: .7rem;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+        color: var(--cmi-muted);
+    }
+    .evm-value {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .badge-spi, .badge-cpi {
+        font-size: .8rem;
+        padding: .2rem .6rem;
+    }
+    @media (max-width: 768px) {
+        .metric-box { min-width: 60px; padding: .35rem .5rem; }
+        .metric-box .value { font-size: .9rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-card mb-4">
+    <div class="page-toolbar">
+        <div>
+            <h2 class="section-title mb-1">{{ project.name }}</h2>
+            <p class="text-muted mb-0">
+                {{ project.start_date|date:"d/m/Y" }} — {{ project.end_date|date:"d/m/Y" }}
+                &middot; Presupuesto: <strong>${{ project.budget|default:0|floatformat:2 }}</strong>
+                &middot; {{ project.activity_set.count }} actividades
+            </p>
+        </div>
+        <div class="page-actions">
+            <a href="{% url 'linea_base_seguimiento' project.pk %}" class="btn btn-outline-secondary btn-sm">
+                Línea base
+            </a>
+            <a href="{% url 'project_detail' project.pk %}" class="btn btn-outline-secondary btn-sm">
+                Volver al proyecto
+            </a>
+        </div>
+    </div>
+</div>
+
+{# ── Configuración de cortes ── #}
+<div class="page-card mb-4">
+    <div class="page-toolbar">
+        <h3 class="section-title mb-0">Configurar cortes</h3>
+        {% if cuts %}
+        <span class="text-muted small">{{ cuts|length }} corte{{ cuts|length|pluralize:'s' }} definido{{ cuts|length|pluralize:'s' }}</span>
+        {% endif %}
+    </div>
+    <form method="post" class="row g-3 align-items-end mt-2">
+        {% csrf_token %}
+        <div class="col-md-4">
+            <label class="form-label fw-semibold" for="id_interval">Intervalo del corte (días)</label>
+            <div class="input-group">
+                <input type="number" name="interval" id="id_interval" class="form-control"
+                       value="{{ interval }}" min="1" max="365" required>
+                <button type="submit" name="generate" value="1" class="btn btn-primary">
+                    {% if cuts %}Regenerar cortes{% else %}Generar cortes{% endif %}
+                </button>
+            </div>
+            <div class="form-text">
+                Divide el proyecto en períodos de esta cantidad de días.
+                90 = trimestres &middot; 30 = mensual &middot; 15 = quincenal
+            </div>
+        </div>
+    </form>
+</div>
+
+{% if not cuts %}
+<div class="page-card">
+    <div class="empty-state">
+        <h5>Aún no hay cortes definidos</h5>
+        <p class="text-muted">Configurá el intervalo y hacé clic en "Generar cortes" para dividir el proyecto en períodos de revisión.</p>
+    </div>
+</div>
+{% else %}
+
+{# ── Resumen global ── #}
+<div class="page-card mb-4">
+    <div class="page-toolbar">
+        <h3 class="section-title mb-0">Resumen global del proyecto</h3>
+    </div>
+    <div class="row g-3">
+        <div class="col-md-3 col-6">
+            <div class="metric-box w-100">
+                <div class="value">${{ total_planned_cost|floatformat:2 }}</div>
+                <div class="label">PV total planificado</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="metric-box w-100">
+                <div class="value">${{ total_ev|floatformat:2 }}</div>
+                <div class="label">EV ganado</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="metric-box w-100">
+                <div class="value">${{ total_ac|floatformat:2 }}</div>
+                <div class="label">AC costo real</div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="metric-box w-100">
+                <div class="value {% if overall_spi >= 1 %}positive{% elif overall_spi > 0 %}negative{% else %}zero{% endif %}">
+                    {{ overall_spi|floatformat:2 }}
+                </div>
+                <div class="label">SPI global</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Tabla de cortes ── #}
+<div class="page-card">
+    <div class="page-toolbar sticky-header">
+        <h3 class="section-title mb-0">Períodos de revisión</h3>
+        <span class="text-muted small">Cada fila agrupa las actividades planificadas en ese período.</span>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive">
+            <table class="table data-table mb-0">
+                <thead>
+                    <tr>
+                        <th style="min-width:140px;">Corte</th>
+                        <th style="min-width:90px;">Período</th>
+                        <th class="text-center">Act. Planif.</th>
+                        <th class="text-center">Act. Compl.</th>
+                        <th class="text-center">Costo Planif. (PV)</th>
+                        <th class="text-center">Valor Ganado (EV)</th>
+                        <th class="text-center">Costo Real (AC)</th>
+                        <th class="text-center">Var. act.</th>
+                        <th class="text-center">Var. $</th>
+                        <th class="text-center">SPI</th>
+                        <th class="text-center">CPI</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center" style="width:40px;">
+                            <span class="d-none d-lg-inline">Detalle</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cut in cuts %}
+                    {% with cut_status=cut.status %}
+                    <tr class="cut-card">
+                        {# ── Nombre del corte ── #}
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="cut-status-indicator bg-{% if cut_status == 'green' %}success{% elif cut_status == 'yellow' %}warning{% elif cut_status == 'red' %}danger{% else %}secondary{% endif %}"></span>
+                                <div>
+                                    <div class="cut-title">{{ cut.name }}</div>
+                                    {% if can_edit %}
+                                    <button class="btn btn-sm btn-outline-secondary py-0 px-1" title="Editar corte"
+                                            onclick="toggleEditCut({{ cut.id }})">
+                                        ✎
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+
+                        {# ── Período ── #}
+                        <td class="cut-period">
+                            {{ cut.start_date|date:"d/m/Y" }}<br>
+                            <span class="text-muted">→</span> {{ cut.end_date|date:"d/m/Y" }}
+                        </td>
+
+                        {# ── Actividades planificadas ── #}
+                        <td class="text-center">
+                            <span class="fw-semibold">{{ cut.planned_count }}</span>
+                            <div class="small text-muted">${{ cut.planned_cost|floatformat:0 }}</div>
+                        </td>
+
+                        {# ── Actividades completadas ── #}
+                        <td class="text-center">
+                            {% if cut.completed_count == cut.planned_count and cut.planned_count > 0 %}
+                            <span class="fw-semibold text-success">{{ cut.completed_count }}</span>
+                            {% elif cut.completed_count < cut.planned_count and cut.completed_count > 0 %}
+                            <span class="fw-semibold text-warning">{{ cut.completed_count }}</span>
+                            {% elif cut.completed_count == 0 and cut.planned_count > 0 %}
+                            <span class="fw-semibold text-muted">0</span>
+                            {% else %}
+                            <span class="fw-semibold">{{ cut.completed_count }}</span>
+                            {% endif %}
+                            <div class="small text-muted">
+                                {% if cut.planned_count > 0 %}
+                                {{ cut.progress_percentage }}%
+                                {% else %}
+                                —
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        {# ── PV ── #}
+                        <td class="text-center">${{ cut.pv|floatformat:2 }}</td>
+
+                        {# ── EV ── #}
+                        <td class="text-center {% if cut.ev >= cut.pv %}text-success{% elif cut.ev > 0 %}text-warning{% else %}text-muted{% endif %}">
+                            ${{ cut.ev|floatformat:2 }}
+                        </td>
+
+                        {# ── AC ── #}
+                        <td class="text-center">${{ cut.ac|floatformat:2 }}</td>
+
+                        {# ── Variación en actividades ── #}
+                        <td class="text-center">
+                            {% with svc=cut.schedule_variance_count %}
+                            {% if svc == 0 %}
+                            <span class="text-muted">0</span>
+                            {% elif svc < 0 %}
+                            <span class="text-danger fw-semibold">{{ svc }}</span>
+                            {% else %}
+                            <span class="text-success fw-semibold">+{{ svc }}</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+
+                        {# ── Variación en $ ── #}
+                        <td class="text-center">
+                            {% with sv=cut.sv %}
+                            {% if sv == 0 %}
+                            <span class="text-muted">$0</span>
+                            {% elif sv < 0 %}
+                            <span class="text-danger fw-semibold">${{ sv|floatformat:2 }}</span>
+                            {% else %}
+                            <span class="text-success fw-semibold">+${{ sv|floatformat:2 }}</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+
+                        {# ── SPI ── #}
+                        <td class="text-center">
+                            <span class="badge {% if cut.spi >= 1 %}bg-success{% elif cut.spi >= 0.85 %}bg-warning text-dark{% elif cut.spi > 0 %}bg-danger{% else %}bg-secondary{% endif %} badge-spi">
+                                {{ cut.spi|floatformat:2 }}
+                            </span>
+                        </td>
+
+                        {# ── CPI ── #}
+                        <td class="text-center">
+                            <span class="badge {% if cut.cpi >= 1 %}bg-success{% elif cut.cpi >= 0.85 %}bg-warning text-dark{% elif cut.cpi > 0 %}bg-danger{% else %}bg-secondary{% endif %} badge-spi">
+                                {{ cut.cpi|floatformat:2 }}
+                            </span>
+                        </td>
+
+                        {# ── Estado ── #}
+                        <td class="text-center">
+                            <span class="badge bg-{% if cut_status == 'green' %}success{% elif cut_status == 'yellow' %}warning{% elif cut_status == 'red' %}danger{% else %}secondary{% endif %}">
+                                {{ cut.status_label }}
+                            </span>
+                        </td>
+
+                        {# ── Expansión ── #}
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-outline-secondary py-0 px-1"
+                                    onclick="toggleDetail({{ cut.id }})"
+                                    id="toggle-btn-{{ cut.id }}"
+                                    title="Ver actividades del período">
+                                ▸
+                            </button>
+                        </td>
+                    </tr>
+
+                    {# ── Fila expandible: actividades del período ── #}
+                    <tr class="cut-detail-row d-none" id="detail-{{ cut.id }}">
+                        <td colspan="13" class="p-0">
+                            {% with acts=cut.activities_in_period %}
+                            {% if acts %}
+                            <table class="table table-sm table-borderless mb-0 small" style="background:#f8f9fa;">
+                                <thead>
+                                    <tr class="small text-muted">
+                                        <th style="padding-left:2rem;width:30%;">Actividad</th>
+                                        <th>Estado</th>
+                                        <th>Inicio planif.</th>
+                                        <th>Fin planif.</th>
+                                        <th>Costo planif.</th>
+                                        <th>Inicio real</th>
+                                        <th>Fin real</th>
+                                        <th>Costo real</th>
+                                        <th>Variación</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for act in acts %}
+                                    <tr>
+                                        <td style="padding-left:2rem;">
+                                            <span class="fw-semibold">{{ act.name }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="status-chip {% if act.status == 'completed' %}bg-success{% elif act.status == 'in_progress' %}bg-warning{% else %}bg-secondary{% endif %} text-white">
+                                                {{ act.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ act.start_date|date:"d/m/Y" }}</td>
+                                        <td>{{ act.end_date|date:"d/m/Y" }}</td>
+                                        <td>${{ act.cost|default:0|floatformat:2 }}</td>
+                                        <td>{{ act.actual_start_date|date:"d/m/Y"|default:"—" }}</td>
+                                        <td>{{ act.actual_end_date|date:"d/m/Y"|default:"—" }}</td>
+                                        <td>${{ act.actual_cost|default:0|floatformat:2 }}</td>
+                                        <td>
+                                            {% with sv=act.schedule_variance_days %}
+                                            {% if sv is None %}
+                                            <span class="text-muted">—</span>
+                                            {% elif sv < 0 %}
+                                            <span class="text-danger">{{ sv }}d</span>
+                                            {% elif sv > 0 %}
+                                            <span class="text-success">+{{ sv }}d</span>
+                                            {% else %}
+                                            <span class="text-muted">0d</span>
+                                            {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% else %}
+                            <div class="text-center text-muted py-3 small" style="padding-left:2rem;">
+                                No hay actividades planificadas en este período.
+                            </div>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                    {% endwith %}  {# ── cierra cut_status ── #}
+                    {% endfor %}
+
+                    {# ── Fila de totales ── #}
+                    <tr class="cut-summary-row">
+                        <td colspan="2"><strong>TOTAL</strong></td>
+                        <td class="text-center fw-semibold">{{ cuts|length }} cortes</td>
+                        <td class="text-center">—</td>
+                        <td class="text-center fw-semibold">${{ total_planned_cost|floatformat:2 }}</td>
+                        <td class="text-center fw-semibold">${{ total_ev|floatformat:2 }}</td>
+                        <td class="text-center fw-semibold">${{ total_ac|floatformat:2 }}</td>
+                        <td colspan="2"></td>
+                        <td class="text-center">
+                            <span class="badge {% if overall_spi >= 1 %}bg-success{% elif overall_spi >= 0.85 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ overall_spi|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge {% if overall_cpi >= 1 %}bg-success{% elif overall_cpi >= 0.85 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                {{ overall_cpi|floatformat:2 }}
+                            </span>
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{# ── Edición de cortes (oculto) ── #}
+{% if can_edit %}
+<div id="edit-cut-forms" class="d-none">
+    {% for cut in cuts %}
+    <div id="edit-form-{{ cut.id }}" class="page-card mt-3 d-none">
+        <div class="page-toolbar">
+            <h4 class="section-title mb-0">Editar: {{ cut.name }}</h4>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEditCut({{ cut.id }})">Cerrar</button>
+        </div>
+        <form method="post" class="row g-3 mt-2">
+            {% csrf_token %}
+            <input type="hidden" name="cut_id" value="{{ cut.id }}">
+            <div class="col-md-4">
+                <label class="form-label">Nombre</label>
+                <input type="text" name="cut_name" class="form-control" value="{{ cut.name }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha inicio</label>
+                <input type="date" name="cut_start" class="form-control" value="{{ cut.start_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Fecha fin</label>
+                <input type="date" name="cut_end" class="form-control" value="{{ cut.end_date|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button type="submit" name="update_cut" value="1" class="btn btn-primary btn-sm">Guardar</button>
+                <button type="submit" name="delete_cut" value="1" class="btn btn-danger btn-sm"
+                        onclick="return confirm('¿Eliminar este corte?')">Eliminar</button>
+            </div>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleDetail(cutId) {
+    const row = document.getElementById('detail-' + cutId);
+    const btn = document.getElementById('toggle-btn-' + cutId);
+    if (!row) return;
+    row.classList.toggle('d-none');
+    btn.textContent = row.classList.contains('d-none') ? '▸' : '▾';
+}
+
+function toggleEditCut(cutId) {
+    const form = document.getElementById('edit-form-' + cutId);
+    if (!form) return;
+    form.classList.toggle('d-none');
+}
+</script>
+{% endblock %}

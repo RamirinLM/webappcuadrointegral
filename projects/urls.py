@@ -35,6 +35,8 @@ urlpatterns = [
     path('seguimiento/<int:pk>/edit/', views.seguimiento_edit, name='seguimiento_edit'),
     # Linea Base — seguimiento masivo por actividad
     path('projects/<int:project_id>/linea-base/', views.linea_base_seguimiento, name='linea_base_seguimiento'),
+    # Cortes del proyecto — períodos de revisión
+    path('projects/<int:project_id>/cortes/', views.project_cuts, name='project_cuts'),
     path('acta/<int:project_id>/create/', views.acta_constitucion_create, name='acta_constitucion_create'),
     path('acta/<int:project_id>/edit/', views.acta_constitucion_edit, name='acta_constitucion_edit'),
     # Solicitudes de cambio

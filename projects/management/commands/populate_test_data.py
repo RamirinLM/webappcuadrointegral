@@ -13,9 +13,11 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from projects.models import (
     Project, Activity, Milestone, UserProfile, ActaConstitucion,
-    Seguimiento, ChangeRequest, Baseline, Acquisition, Cronograma,
-    Presupuesto, Alcance, Comunicacion, AutoCertificacion, Notification,
+    ProjectCut, Seguimiento, ChangeRequest, Baseline, Acquisition,
+    Cronograma, Presupuesto, Alcance, Comunicacion, AutoCertificacion,
+    Notification,
 )
+from projects.services import generate_project_cuts
 from stakeholders.models import Stakeholder, Feedback
 from resources.models import Resource
 from risks.models import Risk
@@ -84,6 +86,8 @@ class Command(BaseCommand):
             self.stdout.write("Usando --force para limpiar datos previos si es necesario.")
             Project.objects.filter(name__icontains="Prueba CMI").delete()
             Project.objects.filter(name__icontains="Planificacion").delete()
+            Project.objects.filter(name__icontains="Ejemplo A").delete()
+            Project.objects.filter(name__icontains="Ejemplo B").delete()
 
         # ═════════════════════════════════════════════════════════════════
         #  1. USUARIOS
@@ -475,6 +479,270 @@ class Command(BaseCommand):
             message="Bienvenido al sistema de gestión de proyectos CMI.",
         )
         self.log("Notificaciones creadas", "SUCCESS")
+
+        # ═════════════════════════════════════════════════════════════════
+        # 11. CORTES DEL PROYECTO (períodos de revisión)
+        # ═════════════════════════════════════════════════════════════════
+        p1_cuts = generate_project_cuts(p1, interval_days=90)
+        self.log(f"Cortes generados para '{p1.name}': {len(p1_cuts)} períodos", "SUCCESS")
+        for c in p1_cuts:
+            self.log(f"  {c.name}: {c.start_date} - {c.end_date} | "
+                     f"{c.planned_count} acts, PV=${c.pv} EV=${c.ev} AC=${c.ac} "
+                     f"SPI={c.spi} CPI={c.cpi} Estado={c.status_label}", "SUCCESS")
+
+        p2_cuts = generate_project_cuts(p2, interval_days=90)
+        self.log(f"Cortes generados para '{p2.name}': {len(p2_cuts)} períodos", "SUCCESS")
+        for c in p2_cuts:
+            self.log(f"  {c.name}: {c.start_date} - {c.end_date} | "
+                     f"{c.planned_count} acts, PV=${c.pv} EV=${c.ev} AC=${c.ac} "
+                     f"SPI={c.spi} CPI={c.cpi} Estado={c.status_label}", "SUCCESS")
+
+        # ═════════════════════════════════════════════════════════════════
+        # 12. PROYECTO DE EJEMPLO A — 12 MESES, TODO BIEN
+        # ═════════════════════════════════════════════════════════════════
+        self.log("—" * 60, "NOTICE")
+        self.log("PROYECTO EJEMPLO A: 12 meses — Gestión Exitosa", "SUCCESS")
+        self.log("—" * 60, "NOTICE")
+
+        p3_start = today - timedelta(days=365)
+        p3_end = today
+
+        p3 = Project.objects.create(
+            name="Proyecto Ejemplo A — Implementación ERP Exitosa",
+            description="EJEMPLO: Proyecto de 12 meses donde TODO SALIÓ BIEN. "
+                        "Todas las actividades se completaron en tiempo y costo. "
+                        "Útil para analizar cortes con métricas EVM saludables.",
+            start_date=p3_start, end_date=p3_end,
+            status="completed", budget=130000.00, created_by=gestor,
+        )
+
+        ActaConstitucion.objects.create(
+            proyecto=p3,
+            alcance="Implementación completa de sistema ERP incluyendo "
+                    "levantamiento, configuración, migración, pruebas y despliegue.",
+            entregables="ERP configurado, datos migrados, usuarios capacitados, "
+                        "sistema en producción.",
+            justificacion="Modernizar la gestión empresarial con un ERP integral.",
+            objetivos="Implementar ERP en 12 meses, dentro del presupuesto y sin desvíos.",
+        )
+
+        self.log("  Proyecto Ejemplo A creado", "SUCCESS")
+
+        # ── Actividades: todas completadas en tiempo y costo ──────
+        acts_p3 = []
+        defs_p3 = [
+            ("Levantamiento de Requisitos",  0,  20,  8000),
+            ("Análisis de Procesos",        20,  15,  5000),
+            ("Diseño de Solución",          35,  25, 12000),
+            ("Configuración Inicial",       60,  30, 15000),
+            ("Migración de Datos",          90,  20, 10000),
+            ("Personalización de Módulos", 110,  40, 25000),
+            ("Pruebas de Aceptación",      150,  20,  8000),
+            ("Capacitación de Usuarios",   170,  25, 12000),
+            ("Despliegue en Producción",   195,  15,  7000),
+            ("Soporte Post-Lanzamiento",   210,  60, 18000),
+            ("Cierre Formal",              270,  15,  5000),
+        ]
+        total_cost_p3 = sum(c for _, _, _, c in defs_p3)
+        self.log(f"  Costo planificado total: ${total_cost_p3:,}", "SUCCESS")
+
+        for name, off, dur, cost in defs_p3:
+            s = p3_start + timedelta(days=off)
+            e = s + timedelta(days=dur)
+            act = Activity.objects.create(
+                project=p3, name=name,
+                description=f"Actividad: {name}",
+                start_date=s, end_date=e,
+                status="completed",
+                cost=cost,
+                actual_start_date=s,
+                actual_end_date=e,
+                actual_cost=cost,
+                assigned_to=gestor,
+            )
+            acts_p3.append(act)
+
+        # Predecesoras en cadena
+        for i in range(1, len(acts_p3)):
+            acts_p3[i].predecessor = acts_p3[i - 1]
+            acts_p3[i].save()
+
+        # ── Hitos ──────────────────────────────────────────────
+        hito_defs_p3 = [
+            ("Proyecto Iniciado",         0,   True,  "initiation", True),
+            ("Requisitos Aprobados",     20,   True,  "planning",   True),
+            ("Diseño Completado",        35,   True,  "planning",   True),
+            ("ERP Configurado",          90,   True,  "execution",  False),
+            ("Migración Finalizada",    110,   True,  "execution",  True),
+            ("Pruebas Superadas",       170,   True,  "execution",  True),
+            ("Despliegue Completado",   210,   True,  "execution",  True),
+            ("Proyecto Cerrado",        285,   True,  "closure",    True),
+        ]
+        for name, offset, completed, phase, is_gate in hito_defs_p3:
+            m = Milestone.objects.create(
+                project=p3, name=name,
+                description=f"Hito: {name}",
+                due_date=p3_start + timedelta(days=offset),
+                completed=completed, phase=phase, is_phase_gate=is_gate,
+            )
+
+        # ── Seguimientos mensuales (12 seguimientos, 1 por mes) ──
+        seg_p3 = []
+        for mes in range(1, 13):
+            fecha = p3_start + timedelta(days=mes * 30)
+            if fecha > today:
+                fecha = today
+            seg = Seguimiento(proyecto=p3, fecha=fecha,
+                              observacion=f"Seguimiento Mes {mes} — Todo en línea.")
+            seg.save()
+            seg_p3.append(seg)
+            self.log(f"  Seguimiento Mes {mes} ({fecha}): "
+                     f"PV=${seg.pv} EV=${seg.ev} AC=${seg.ac} "
+                     f"SPI={seg.spi} CPI={seg.cpi}", "SUCCESS")
+
+        # ═════════════════════════════════════════════════════════════════
+        # 13. PROYECTO DE EJEMPLO B — 12 MESES, CON DESVÍOS
+        # ═════════════════════════════════════════════════════════════════
+        self.log("—" * 60, "NOTICE")
+        self.log("PROYECTO EJEMPLO B: 12 meses — Con Retrasos y Sobrecostos", "WARNING")
+        self.log("—" * 60, "NOTICE")
+
+        # ── MISMA definición de actividades que Proyecto A ──
+        #    La diferencia son los retrasos y sobrecostos en los datos reales.
+        defs_p4 = [
+            ("Levantamiento de Requisitos",  0,  20,  8000),
+            ("Análisis de Procesos",        20,  15,  5000),
+            ("Diseño de Solución",          35,  25, 12000),
+            ("Configuración Inicial",       60,  30, 15000),
+            ("Migración de Datos",          90,  20, 10000),
+            ("Personalización de Módulos", 110,  40, 25000),
+            ("Pruebas de Aceptación",      150,  20,  8000),
+            ("Capacitación de Usuarios",   170,  25, 12000),
+            ("Despliegue en Producción",   195,  15,  7000),
+            ("Soporte Post-Lanzamiento",   210,  60, 18000),
+            ("Cierre Formal",              270,  15,  5000),
+        ]
+
+        # Retraso en inicio real (días), extensión de duración (días),
+        # multiplicador de costo real, estado
+        #   (start_delay, dur_extension, cost_mult, status)
+        desvios_p4 = [
+            ( 0,  2,  1.00, "completed"),   # Levantamiento — ok, +2d
+            ( 3,  5,  1.20, "completed"),   # Análisis — +3d inicio, +5d duración, +20%
+            ( 5,  8,  1.15, "completed"),   # Diseño — +5d inicio, +8d duración, +15%
+            (12, 15,  1.25, "completed"),   # Configuración — +12d, +15d, +25%
+            (18, 22,  1.10, "completed"),   # Migración — +18d, +22d, +10%
+            (30, 35,  1.30, "completed"),   # Personalización — +30d, +35d, +30%
+            (35, 32,  1.15, "completed"),   # Pruebas — +35d, +32d, +15%
+            (42, 30,  1.00, "completed"),   # Capacitación — +42d, +30d, ok costo
+            (50, 25,  1.30, "completed"),   # Despliegue — +50d, +25d, +30%
+            (55, None, None,  "in_progress"), # Soporte — empezó +55d tarde, en curso
+            (None, None, None, "pending"),    # Cierre — pendiente
+        ]
+
+        p4_start = today - timedelta(days=365)
+        # El proyecto se extendió por los retrasos acumulados
+        p4_end = today + timedelta(days=180)  # 6 meses de extensión
+
+        p4 = Project.objects.create(
+            name="Proyecto Ejemplo B — Implementación ERP con Desvíos",
+            description="EJEMPLO: Proyecto de 12 meses donde HUBO RETRASOS Y SOBREPRECIO. "
+                        "MISMAS actividades que Ejemplo A, pero con ejecución demorada "
+                        "y sobrecostos. Útil para comparar cortes EVM sanos vs. críticos.",
+            start_date=p4_start, end_date=p4_end,
+            status="in_progress", budget=130000.00, created_by=gestor,
+        )
+
+        ActaConstitucion.objects.create(
+            proyecto=p4,
+            alcance="MISMO alcance que Proyecto A: implementación ERP completa.",
+            entregables="ERP configurado, datos migrados, usuarios capacitados.",
+            justificacion="Misma justificación que Proyecto A, pero ejecución con problemas.",
+            objetivos="Implementar ERP, aunque con desvíos esperados en cronograma y costo.",
+        )
+
+        self.log("  Proyecto Ejemplo B creado", "SUCCESS")
+
+        acts_p4 = []
+        for (name, off, dur, cost), (d_start, d_ext, c_mult, status) in zip(defs_p4, desvios_p4):
+            planned_start = p4_start + timedelta(days=off)
+            planned_end = planned_start + timedelta(days=dur)
+
+            if status == "pending":
+                a_start = a_end = a_cost = None
+            elif status == "in_progress":
+                a_start = planned_start + timedelta(days=d_start) if d_start is not None else None
+                a_end = None
+                a_cost = None
+            else:  # completed
+                a_start = planned_start + timedelta(days=d_start) if d_start is not None else None
+                # actual_end = actual_start + dur + extension
+                dur_total = dur + (d_ext or 0)
+                a_end = a_start + timedelta(days=dur_total) if a_start else None
+                a_cost = round(cost * c_mult) if c_mult else cost
+
+            act = Activity.objects.create(
+                project=p4, name=name,
+                description=f"Actividad: {name}",
+                start_date=planned_start,
+                end_date=planned_end,
+                status=status,
+                cost=cost,
+                actual_start_date=a_start,
+                actual_end_date=a_end,
+                actual_cost=a_cost,
+                assigned_to=gestor,
+            )
+            acts_p4.append(act)
+
+        # Predecesoras
+        for i in range(1, len(acts_p4)):
+            if acts_p4[i].status != 'pending':  # solo si ya empezó
+                acts_p4[i].predecessor = acts_p4[i - 1]
+                acts_p4[i].save()
+
+        # ── Hitos ──────────────────────────────────────────────
+        hito_defs_p4 = [
+            ("Proyecto Iniciado",         0,   True,  "initiation", True),
+            ("Requisitos Aprobados",     20,   True,  "planning",   True),
+            ("Diseño Completado",        35,   True,  "planning",   True),
+            ("ERP Configurado",          90,   True,  "execution",  False),
+            ("Migración Finalizada",    110,   True,  "execution",  True),
+            ("Pruebas Superadas",       170,   True,  "execution",  True),
+            ("Despliegue en Producción",210,   False, "execution",  True),
+            ("Proyecto Cerrado",        285,   False, "closure",    True),
+        ]
+        for name, offset, completed, phase, is_gate in hito_defs_p4:
+            Milestone.objects.create(
+                project=p4, name=name,
+                description=f"Hito: {name}",
+                due_date=p4_start + timedelta(days=offset),
+                completed=completed, phase=phase, is_phase_gate=is_gate,
+            )
+
+        # ── Seguimientos mensuales ────────────────────────────
+        for mes in range(1, 13):
+            fecha = p4_start + timedelta(days=mes * 30)
+            if fecha > today:
+                fecha = today
+            seg = Seguimiento(proyecto=p4, fecha=fecha,
+                              observacion=f"Seguimiento Mes {mes} — Se detectan desvíos.")
+            seg.save()
+            self.log(f"  Seguimiento Mes {mes} ({fecha}): "
+                     f"PV=${seg.pv} EV=${seg.ev} AC=${seg.ac} "
+                     f"SV={seg.sv} CV={seg.cv} "
+                     f"SPI={seg.spi} CPI={seg.cpi}", "WARNING" if seg.sv < 0 or seg.cv < 0 else "SUCCESS")
+
+        # ═════════════════════════════════════════════════════════════════
+        # 14. CORTES PARA PROYECTOS DE EJEMPLO
+        # ═════════════════════════════════════════════════════════════════
+        for proy, nombre in [(p3, "Ejemplo A (éxito)"), (p4, "Ejemplo B (desvíos)")]:
+            cortes = generate_project_cuts(proy, interval_days=90)
+            self.log(f"Cortes generados para '{nombre}': {len(cortes)} períodos", "SUCCESS")
+            for c in cortes:
+                self.log(f"  {c.name}: {c.start_date} - {c.end_date} | "
+                         f"{c.planned_count} acts, PV=${c.pv} EV=${c.ev} AC=${c.ac} "
+                         f"SPI={c.spi} CPI={c.cpi} Estado={c.status_label}", "SUCCESS")
 
         # ═════════════════════════════════════════════════════════════════
         #  RESUMEN FINAL

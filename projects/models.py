@@ -686,3 +686,197 @@ class ActivityAssignment(models.Model):
         verbose_name = 'Asignación de Actividad'
         verbose_name_plural = 'Asignaciones de Actividades'
         unique_together = ['activity', 'user']
+
+
+class ProjectCut(models.Model):
+    """
+    Define un período de revisión (corte/trimestre) dentro de un proyecto.
+    Las métricas se computan dinámicamente desde las actividades del proyecto.
+    """
+    project = models.ForeignKey(
+        Project, on_delete=models.CASCADE, related_name='cuts',
+        verbose_name='Proyecto'
+    )
+    name = models.CharField(
+        max_length=100, verbose_name='Nombre del corte',
+        help_text='Ej: Trimestre 1, Corte 2, Q1 2026...'
+    )
+    start_date = models.DateField(verbose_name='Fecha de inicio del período')
+    end_date = models.DateField(verbose_name='Fecha de fin del período')
+    sort_order = models.PositiveIntegerField(
+        default=0, verbose_name='Orden',
+        help_text='Orden de aparición (1, 2, 3...)'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['sort_order']
+        verbose_name = 'Corte del Proyecto'
+        verbose_name_plural = 'Cortes del Proyecto'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['project', 'sort_order'],
+                name='unique_cut_order_per_project'
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.name} — {self.project.name}"
+
+    # ── Actividades del período ──────────────────────────────────────────
+
+    @property
+    def activities_in_period(self):
+        """
+        Actividades del proyecto cuya fecha de fin PLANIFICADA cae dentro
+        del rango del corte. Esto define qué actividades "pertenecen" a
+        este período según la planificación.
+        """
+        return self.project.activity_set.filter(
+            end_date__gte=self.start_date,
+            end_date__lte=self.end_date,
+        )
+
+    # ── Métricas planificadas ────────────────────────────────────────────
+
+    @property
+    def planned_count(self) -> int:
+        """Cantidad de actividades planificadas en este período."""
+        return self.activities_in_period.count()
+
+    @property
+    def planned_cost(self):
+        """Suma del costo planificado de las actividades del período (PV)."""
+        from decimal import Decimal
+        from django.db.models import Sum
+        result = self.activities_in_period.aggregate(total=Sum('cost'))
+        return result['total'] or Decimal('0')
+
+    @property
+    def pv(self):
+        """PV (Planned Value) = planned_cost (alias semántico EVM)."""
+        return self.planned_cost
+
+    # ── Métricas reales ──────────────────────────────────────────────────
+
+    @property
+    def completed_activities(self):
+        """Actividades del período que ya están completadas."""
+        return self.activities_in_period.filter(status='completed')
+
+    @property
+    def completed_count(self) -> int:
+        """Cuántas actividades del período se completaron realmente."""
+        return self.completed_activities.count()
+
+    @property
+    def ev(self):
+        """
+        EV (Earned Value) = suma del costo PLANIFICADO de las actividades
+        del período que YA fueron completadas.
+        """
+        from decimal import Decimal
+        from django.db.models import Sum
+        result = self.completed_activities.aggregate(total=Sum('cost'))
+        return result['total'] or Decimal('0')
+
+    @property
+    def ac(self):
+        """
+        AC (Actual Cost) = suma del costo REAL de las actividades
+        del período que fueron completadas.
+        """
+        from decimal import Decimal
+        total = Decimal('0')
+        for act in self.completed_activities:
+            total += Decimal(str(act.actual_cost)) if act.actual_cost is not None else Decimal('0')
+        return total
+
+    # ── Variaciones ──────────────────────────────────────────────────────
+
+    @property
+    def sv(self):
+        """
+        SV (Schedule Variance) = EV - PV.
+        Positivo = adelantado (hicimos más de lo planificado).
+        Negativo = atrasado (hicimos menos de lo planificado).
+        """
+        return self.ev - self.pv
+
+    @property
+    def cv(self):
+        """
+        CV (Cost Variance) = EV - AC.
+        Positivo = gastamos menos de lo presupuestado.
+        Negativo = gastamos más de lo presupuestado.
+        """
+        return self.ev - self.ac
+
+    @property
+    def spi(self):
+        """SPI (Schedule Performance Index). >= 1.0 = buen ritmo."""
+        from decimal import Decimal
+        if self.pv > 0:
+            return self.ev / self.pv
+        return Decimal('0')
+
+    @property
+    def cpi(self):
+        """CPI (Cost Performance Index). >= 1.0 = eficiente en costos."""
+        from decimal import Decimal
+        if self.ac > 0:
+            return self.ev / self.ac
+        return Decimal('0')
+
+    # ── Indicadores de estado ────────────────────────────────────────────
+
+    @property
+    def schedule_variance_count(self) -> int:
+        """
+        Diferencia en cantidad de actividades:
+        Negativo = completamos menos de lo planificado (atrasado).
+        """
+        return self.completed_count - self.planned_count
+
+    @property
+    def progress_percentage(self) -> float:
+        """Porcentaje de avance: completadas / planificadas."""
+        if self.planned_count == 0:
+            return 0.0
+        return round((self.completed_count / self.planned_count) * 100, 1)
+
+    @property
+    def status(self):
+        """
+        Semáforo del período basado en SPI y CPI.
+        - Verde:     SPI >= 0.95 y CPI >= 0.95  (todo bien)
+        - Amarillo:  SPI >= 0.85 y CPI >= 0.85  (alerta, desviaciones menores)
+        - Rojo:      cualquier otro caso con datos (crítico, desviaciones graves)
+        - Sin info:  no hay datos reales cargados (nada completado)
+        """
+        if self.planned_count == 0:
+            return 'no_data'
+
+        # Si hay actividades planificadas pero ninguna completada → sin información real
+        if self.completed_count == 0:
+            return 'no_data'
+
+        spi_val = float(self.spi)
+        cpi_val = float(self.cpi)
+
+        if spi_val >= 0.95 and cpi_val >= 0.95:
+            return 'green'
+        elif spi_val >= 0.85 and cpi_val >= 0.85:
+            return 'yellow'
+        else:
+            return 'red'
+
+    @property
+    def status_label(self):
+        labels = {
+            'green': 'En línea',
+            'yellow': 'En alerta',
+            'red': 'Crítico',
+            'no_data': 'Sin información',
+        }
+        return labels.get(self.status, 'Desconocido')
