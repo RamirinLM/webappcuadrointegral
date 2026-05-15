@@ -181,12 +181,21 @@ def generate_project_cuts(project, interval_days: int = 90):
     while current_start <= end:
         current_end = min(current_start + delta - timedelta(days=1), end)
 
-        if interval_days >= 80:
-            name = f"Trimestre {period_num}"
-        elif interval_days >= 25:
-            name = f"Mes {period_num}"
+        if interval_days <= 7:
+            label = "Semana"
+        elif interval_days <= 20:
+            label = "Quincena"
+        elif interval_days <= 45:
+            label = "Mes"
+        elif interval_days <= 100:
+            label = "Trimestre"
+        elif interval_days <= 160:
+            label = "Cuatrimestre"
+        elif interval_days <= 200:
+            label = "Semestre"
         else:
-            name = f"Periodo {period_num}"
+            label = "Periodo"
+        name = f"{label} {period_num}"
 
         cuts.append(ProjectCut(
             project=project,

@@ -130,7 +130,8 @@
             </div>
             <div class="form-text">
                 Divide el proyecto en períodos de esta cantidad de días.
-                90 = trimestres &middot; 30 = mensual &middot; 15 = quincenal
+                7 = semanal &middot; 15 = quincenal &middot; 30 = mensual &middot;
+                90 = trimestral &middot; 120 = cuatrimestral &middot; 180 = semestral
             </div>
         </div>
     </form>
@@ -221,7 +222,11 @@
                                     <div class="cut-title">{{ cut.name }}</div>
                                     {% if can_edit %}
                                     <button class="btn btn-sm btn-outline-secondary py-0 px-1" title="Editar corte"
-                                            onclick="toggleEditCut({{ cut.id }})">
+                                            data-bs-toggle="modal" data-bs-target="#editCutModal"
+                                            data-cut-id="{{ cut.id }}"
+                                            data-cut-name="{{ cut.name }}"
+                                            data-cut-start="{{ cut.start_date|date:'Y-m-d' }}"
+                                            data-cut-end="{{ cut.end_date|date:'Y-m-d' }}">
                                         ✎
                                     </button>
                                     {% endif %}
@@ -421,38 +426,48 @@
     </div>
 </div>
 
-{# ── Edición de cortes (oculto) ── #}
+{# ── Modal de edición de cortes ── #}
 {% if can_edit %}
-<div id="edit-cut-forms" class="d-none">
-    {% for cut in cuts %}
-    <div id="edit-form-{{ cut.id }}" class="page-card mt-3 d-none">
-        <div class="page-toolbar">
-            <h4 class="section-title mb-0">Editar: {{ cut.name }}</h4>
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleEditCut({{ cut.id }})">Cerrar</button>
+<div class="modal fade" id="editCutModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar corte</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="cut_id" id="modal-cut-id" value="">
+                    <div class="mb-3">
+                        <label for="modal-cut-name" class="form-label fw-semibold">Nombre del corte</label>
+                        <input type="text" name="cut_name" id="modal-cut-name" class="form-control" required>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="modal-cut-start" class="form-label fw-semibold">Fecha de inicio</label>
+                            <input type="date" name="cut_start" id="modal-cut-start" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="modal-cut-end" class="form-label fw-semibold">Fecha de fin</label>
+                            <input type="date" name="cut_end" id="modal-cut-end" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" name="delete_cut" value="1"
+                            class="btn btn-danger me-auto"
+                            onclick="return confirm('¿Eliminar este corte?\n\nEsta acción no se puede deshacer.')">
+                        Eliminar
+                    </button>
+                    <button type="submit" name="update_cut" value="1" class="btn btn-primary">
+                        Guardar cambios
+                    </button>
+                </div>
+            </form>
         </div>
-        <form method="post" class="row g-3 mt-2">
-            {% csrf_token %}
-            <input type="hidden" name="cut_id" value="{{ cut.id }}">
-            <div class="col-md-4">
-                <label class="form-label">Nombre</label>
-                <input type="text" name="cut_name" class="form-control" value="{{ cut.name }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Fecha inicio</label>
-                <input type="date" name="cut_start" class="form-control" value="{{ cut.start_date|date:'Y-m-d' }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Fecha fin</label>
-                <input type="date" name="cut_end" class="form-control" value="{{ cut.end_date|date:'Y-m-d' }}">
-            </div>
-            <div class="col-md-2 d-flex align-items-end gap-2">
-                <button type="submit" name="update_cut" value="1" class="btn btn-primary btn-sm">Guardar</button>
-                <button type="submit" name="delete_cut" value="1" class="btn btn-danger btn-sm"
-                        onclick="return confirm('¿Eliminar este corte?')">Eliminar</button>
-            </div>
-        </form>
     </div>
-    {% endfor %}
 </div>
 {% endif %}
 
@@ -461,6 +476,7 @@
 
 {% block extra_js %}
 <script>
+// ── Expandir/colapsar detalle de actividades del período ──
 function toggleDetail(cutId) {
     const row = document.getElementById('detail-' + cutId);
     const btn = document.getElementById('toggle-btn-' + cutId);
@@ -469,10 +485,20 @@ function toggleDetail(cutId) {
     btn.textContent = row.classList.contains('d-none') ? '▸' : '▾';
 }
 
-function toggleEditCut(cutId) {
-    const form = document.getElementById('edit-form-' + cutId);
-    if (!form) return;
-    form.classList.toggle('d-none');
-}
+// ── Modal de edición: poblar campos desde los data-* del botón ──
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('editCutModal');
+    if (!modal) return;
+
+    modal.addEventListener('show.bs.modal', function (event) {
+        const btn = event.relatedTarget;
+        if (!btn) return;
+
+        document.getElementById('modal-cut-id').value = btn.dataset.cutId || '';
+        document.getElementById('modal-cut-name').value = btn.dataset.cutName || '';
+        document.getElementById('modal-cut-start').value = btn.dataset.cutStart || '';
+        document.getElementById('modal-cut-end').value = btn.dataset.cutEnd || '';
+    });
+});
 </script>
 {% endblock %}
