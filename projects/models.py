@@ -846,19 +846,29 @@ class ProjectCut(models.Model):
         return round((self.completed_count / self.planned_count) * 100, 1)
 
     @property
+    def has_any_tracking(self) -> bool:
+        """True si al menos una actividad del período tiene datos reales cargados."""
+        from django.db.models import Q
+        return self.activities_in_period.filter(
+            Q(actual_start_date__isnull=False) |
+            Q(actual_end_date__isnull=False) |
+            Q(actual_cost__isnull=False)
+        ).exists()
+
+    @property
     def status(self):
         """
         Semáforo del período basado en SPI y CPI.
         - Verde:     SPI >= 0.95 y CPI >= 0.95  (todo bien)
         - Amarillo:  SPI >= 0.85 y CPI >= 0.85  (alerta, desviaciones menores)
         - Rojo:      cualquier otro caso con datos (crítico, desviaciones graves)
-        - Sin info:  no hay datos reales cargados (nada completado)
+        - Sin info:  no hay NINGUNA actividad con datos reales cargados
         """
         if self.planned_count == 0:
             return 'no_data'
 
-        # Si hay actividades planificadas pero ninguna completada → sin información real
-        if self.completed_count == 0:
+        # Si ninguna actividad del período tiene datos reales → sin información
+        if not self.has_any_tracking:
             return 'no_data'
 
         spi_val = float(self.spi)

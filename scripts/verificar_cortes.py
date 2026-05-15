@@ -144,7 +144,7 @@ for c_idx, c in enumerate(cuts, 1):
     cpi_val = float(c.cpi)
     if c.planned_count == 0:
         expected_status = 'no_data'
-    elif c.completed_count == 0:
+    elif not c.has_any_tracking:
         expected_status = 'no_data'
     elif spi_val >= 0.95 and cpi_val >= 0.95:
         expected_status = 'green'
