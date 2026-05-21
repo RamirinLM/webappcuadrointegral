@@ -9,15 +9,26 @@
     {% block extra_css %}{% endblock %}
     <style>
         :root {
-            --cmi-primary: #005f73;
-            --cmi-primary-dark: #0a3d4a;
-            --cmi-accent: #ee9b00;
-            --cmi-accent-soft: #fff4d6;
+            /* Brand palette — Celica flag colors */
+            --cmi-celeste: #8acfeb;
+            --cmi-celeste-dark: #6bb5d4;
+            --cmi-yellow: #f0d000;
+            --cmi-yellow-soft: #f5e88a;
+            --cmi-blue: #0070f0;
+
+            /* Semantic variables (backward-compatible naming) */
+            --cmi-primary: #8acfeb;        /* celeste — sidebar bg, primary surfaces */
+            --cmi-primary-dark: #17323b;   /* headings / dark text */
+            --cmi-accent: #f0d000;         /* amarillo — buttons, highlights */
+            --cmi-accent-soft: #f5e88a;    /* amarillo suave — table headers */
+
+            /* Surfaces — yellow predominates in content */
             --cmi-surface: #ffffff;
-            --cmi-bg: #f4f7f9;
-            --cmi-border: #d7e0e5;
+            --cmi-bg: #fcf6e0;             /* warm cream (was #f0f0f0) */
+            --cmi-border: #e8d89a;         /* yellow-tinted border */
+            --cmi-yellow-bg: #fef8e6;      /* light yellow for cards */
             --cmi-text: #17323b;
-            --cmi-muted: #55707b;
+            --cmi-muted: #6a7d88;
             --shell-width: 280px;
         }
 
@@ -28,8 +39,9 @@
         body {
             margin: 0;
             background:
-                radial-gradient(circle at top right, rgba(238, 155, 0, 0.16), transparent 22rem),
-                linear-gradient(180deg, #f7fbfc 0%, var(--cmi-bg) 100%);
+                radial-gradient(circle at top right, rgba(240, 208, 0, 0.25), transparent 30rem),
+                radial-gradient(circle at bottom left, rgba(138, 207, 235, 0.12), transparent 25rem),
+                linear-gradient(180deg, #fefbd8 0%, #fcf3cc 40%, var(--cmi-bg) 100%);
             color: var(--cmi-text);
             min-height: 100vh;
         }
@@ -40,8 +52,8 @@
             top: -3rem;
             z-index: 2000;
             padding: 0.75rem 1rem;
-            background: var(--cmi-primary-dark);
-            color: #fff;
+            background: var(--cmi-primary);
+            color: var(--cmi-text);
             border-radius: 0.75rem;
             text-decoration: none;
         }
@@ -57,13 +69,13 @@
         .app-sidebar {
             width: var(--shell-width);
             min-height: 100vh;
-            background: linear-gradient(180deg, var(--cmi-primary) 0%, var(--cmi-primary-dark) 100%);
-            color: #fff;
+            background: var(--cmi-primary);
+            color: var(--cmi-text);
             padding: 1.5rem 1rem;
             position: fixed;
             inset: 0 auto 0 0;
             overflow-y: auto;
-            box-shadow: 0 0 2rem rgba(15, 44, 56, 0.15);
+            box-shadow: 0 0 2rem rgba(15, 44, 56, 0.08);
         }
 
         .app-brand {
@@ -78,7 +90,7 @@
             height: 3rem;
             border-radius: 1rem;
             object-fit: cover;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.6);
         }
 
         .app-brand-title {
@@ -86,12 +98,13 @@
             font-size: 1.05rem;
             font-weight: 700;
             letter-spacing: 0.03em;
+            color: var(--cmi-text);
         }
 
         .app-brand-subtitle {
             margin: 0;
             font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.8);
+            color: var(--cmi-muted);
         }
 
         .nav-section-title {
@@ -100,7 +113,7 @@
             font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.72);
+            color: var(--cmi-muted);
         }
 
         .sidebar-link,
@@ -112,7 +125,7 @@
             gap: 0.75rem;
             padding: 0.8rem 0.95rem;
             margin-bottom: 0.35rem;
-            color: #fff;
+            color: var(--cmi-text);
             text-decoration: none;
             border: 1px solid transparent;
             border-radius: 0.9rem;
@@ -124,9 +137,9 @@
         .sidebar-link:focus,
         .sidebar-action:hover,
         .sidebar-action:focus {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.14);
-            border-color: rgba(255, 255, 255, 0.16);
+            color: var(--cmi-text);
+            background: rgba(255, 255, 255, 0.45);
+            border-color: rgba(255, 255, 255, 0.5);
             transform: translateX(2px);
         }
 
@@ -134,8 +147,9 @@
             margin-top: 1.5rem;
             padding: 1rem;
             border-radius: 1rem;
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.35);
             font-size: 0.92rem;
+            color: var(--cmi-text);
         }
 
         .app-main {
@@ -150,8 +164,8 @@
             top: 0;
             z-index: 1030;
             backdrop-filter: blur(10px);
-            background: rgba(247, 251, 252, 0.92);
-            border-bottom: 1px solid rgba(23, 50, 59, 0.08);
+            background: rgba(255, 252, 230, 0.92);
+            border-bottom: 1px solid rgba(240, 208, 0, 0.10);
         }
 
         .app-topbar-inner {
@@ -169,6 +183,16 @@
             font-size: 1.45rem;
             font-weight: 700;
             color: var(--cmi-primary-dark);
+        }
+        .page-summary h1::before {
+            content: '';
+            display: inline-block;
+            width: 0.5rem;
+            height: 1.8rem;
+            background: var(--cmi-yellow);
+            border-radius: 0.25rem;
+            margin-right: 0.65rem;
+            vertical-align: middle;
         }
 
         .page-summary p {
@@ -188,7 +212,7 @@
             border-radius: 999px;
             padding: 0.45rem 0.8rem;
             border: 1px solid var(--cmi-border);
-            background: var(--cmi-surface);
+            background: rgba(255, 255, 255, 0.85);
             color: var(--cmi-primary-dark);
             font-size: 0.88rem;
             font-weight: 600;
@@ -203,15 +227,15 @@
         }
 
         .content-card {
-            background: rgba(255, 255, 255, 0.88);
-            border: 1px solid rgba(23, 50, 59, 0.08);
+            background: rgba(255, 254, 245, 0.92);
+            border: 1px solid rgba(240, 208, 0, 0.15);
             border-radius: 1.25rem;
             box-shadow: 0 1rem 2rem rgba(15, 44, 56, 0.06);
         }
 
         .page-card {
-            background: rgba(255, 255, 255, 0.94);
-            border: 1px solid rgba(23, 50, 59, 0.08);
+            background: rgba(255, 254, 245, 0.95);
+            border: 1px solid rgba(240, 208, 0, 0.15);
             border-radius: 1.25rem;
             box-shadow: 0 1rem 2rem rgba(15, 44, 56, 0.06);
             padding: 1.5rem;
@@ -234,8 +258,8 @@
         }
 
         .form-section {
-            background: #fff;
-            border: 1px solid rgba(23, 50, 59, 0.08);
+            background: rgba(255, 254, 245, 0.95);
+            border: 1px solid rgba(240, 208, 0, 0.12);
             border-radius: 1rem;
             padding: 1.25rem;
         }
@@ -247,8 +271,9 @@
         }
 
         .metric-card {
-            background: #fff;
-            border: 1px solid rgba(23, 50, 59, 0.08);
+            background: rgba(255, 254, 245, 0.95);
+            border: 1px solid rgba(240, 208, 0, 0.12);
+            border-left: 4px solid var(--cmi-yellow);
             border-radius: 1rem;
             padding: 1rem 1.1rem;
         }
@@ -280,23 +305,29 @@
         }
 
         .data-table thead th {
-            background: var(--cmi-accent-soft);
-            color: var(--cmi-primary-dark);
+            background: var(--cmi-yellow);
+            color: var(--cmi-text);
             font-size: 0.88rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            border-bottom-width: 1px;
+            border-bottom: 2px solid #d4b800;
         }
 
         .data-table tbody td {
             vertical-align: middle;
         }
+        .data-table tbody tr:nth-child(even) {
+            background: rgba(240, 208, 0, 0.05);
+        }
+        .data-table tbody tr:hover {
+            background: rgba(240, 208, 0, 0.10);
+        }
 
         .table-card {
             overflow: hidden;
             border-radius: 1rem;
-            border: 1px solid rgba(23, 50, 59, 0.08);
-            background: #fff;
+            border: 1px solid rgba(240, 208, 0, 0.15);
+            background: rgba(255, 254, 245, 0.95);
         }
 
         .empty-state {
@@ -312,14 +343,14 @@
             padding: 0.35rem 0.8rem;
             font-size: 0.86rem;
             font-weight: 600;
-            background: #edf2f4;
-            color: var(--cmi-primary-dark);
+            background: rgba(240, 208, 0, 0.20);
+            color: var(--cmi-text);
         }
 
         .app-footer {
             margin-left: var(--shell-width);
-            border-top: 1px solid rgba(23, 50, 59, 0.08);
-            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid rgba(240, 208, 0, 0.10);
+            background: rgba(255, 252, 230, 0.92);
         }
 
         .app-footer-inner {
@@ -334,7 +365,12 @@
         .form-select,
         textarea {
             border-radius: 0.85rem;
-            border-color: #bfd1d9;
+            border-color: #c8d6de;
+        }
+        .form-control:focus,
+        .form-select:focus,
+        textarea:focus {
+            border-color: var(--cmi-celeste);
         }
 
         .form-control:focus,
@@ -342,7 +378,52 @@
         textarea:focus,
         .btn:focus,
         a:focus {
-            box-shadow: 0 0 0 0.2rem rgba(0, 95, 115, 0.18);
+            box-shadow: 0 0 0 0.2rem rgba(138, 207, 235, 0.35);
+        }
+
+        /* ===== Bootstrap button overrides ===== */
+        .btn-primary {
+            --bs-btn-bg: var(--cmi-yellow);
+            --bs-btn-border-color: var(--cmi-yellow);
+            --bs-btn-color: #17323b;
+            --bs-btn-hover-bg: #e0c000;
+            --bs-btn-hover-border-color: #e0c000;
+            --bs-btn-hover-color: #17323b;
+            --bs-btn-active-bg: #d0b000;
+            --bs-btn-active-border-color: #d0b000;
+            --bs-btn-active-color: #17323b;
+            --bs-btn-disabled-bg: #e8d84a;
+            --bs-btn-disabled-border-color: #e8d84a;
+            --bs-btn-disabled-color: #17323b;
+        }
+        .btn-outline-primary {
+            --bs-btn-color: var(--cmi-blue);
+            --bs-btn-border-color: var(--cmi-blue);
+            --bs-btn-hover-bg: var(--cmi-blue);
+            --bs-btn-hover-border-color: var(--cmi-blue);
+            --bs-btn-hover-color: #fff;
+            --bs-btn-active-bg: #0058c0;
+            --bs-btn-active-border-color: #0058c0;
+            --bs-btn-active-color: #fff;
+        }
+        .btn-outline-secondary {
+            --bs-btn-color: var(--cmi-muted);
+            --bs-btn-border-color: var(--cmi-border);
+            --bs-btn-hover-bg: #e8edf0;
+            --bs-btn-hover-border-color: #bfcdd4;
+            --bs-btn-hover-color: var(--cmi-text);
+            --bs-btn-active-bg: #d5dee3;
+            --bs-btn-active-border-color: #a0b3bc;
+            --bs-btn-active-color: var(--cmi-text);
+        }
+        .btn-success {
+            --bs-btn-bg: #5cb874;
+            --bs-btn-border-color: #5cb874;
+            --bs-btn-color: #fff;
+        }
+        .btn-danger {
+            --bs-btn-bg: #e74c4c;
+            --bs-btn-border-color: #e74c4c;
         }
 
         .mobile-nav-toggle {
@@ -382,22 +463,16 @@
     <a class="skip-link" href="#main-content">Saltar al contenido</a>
 
     {% if user.is_authenticated %}
-    <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel">
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileNav" aria-labelledby="mobileNavLabel" style="background: var(--cmi-celeste); color: var(--cmi-text);">
         <div class="offcanvas-header">
             <h2 class="offcanvas-title h5" id="mobileNavLabel">Navegacion principal</h2>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Cerrar menu"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Cerrar menu"></button>
         </div>
         <div class="offcanvas-body">
             <nav aria-label="Navegacion movil">
                 <a class="sidebar-link" href="{% url 'dashboard' %}">Tablero</a>
                 <a class="sidebar-link" href="{% url 'project_list' %}">Proyectos</a>
                 <a class="sidebar-link" href="{% url 'project_wizard' %}">Nuevo proyecto</a>
-                <a class="sidebar-link" href="{% url 'activity_list' %}">Actividades</a>
-                <a class="sidebar-link" href="{% url 'milestone_list' %}">Hitos</a>
-                <a class="sidebar-link" href="{% url 'stakeholders:stakeholder_list' %}">Interesados</a>
-                <a class="sidebar-link" href="{% url 'stakeholders:feedback_list' %}">Feedback</a>
-                <a class="sidebar-link" href="{% url 'resources:resource_list' %}">Recursos</a>
-                <a class="sidebar-link" href="{% url 'risks:risk_list' %}">Riesgos</a>
                 <a class="sidebar-link" href="{% url 'reports:report_list' %}">Reportes</a>
                 <a class="sidebar-link" href="{% url 'seguimiento_list' %}">Seguimiento</a>
                 <a class="sidebar-link" href="{% url 'change_request_list' %}">Solicitudes de cambio</a>
@@ -426,17 +501,11 @@
                 <a class="sidebar-link" href="{% url 'dashboard' %}">Tablero</a>
                 <a class="sidebar-link" href="{% url 'project_list' %}">Proyectos</a>
                 <a class="sidebar-link" href="{% url 'project_wizard' %}">Nuevo proyecto</a>
-                <a class="sidebar-link" href="{% url 'activity_list' %}">Actividades</a>
-                <a class="sidebar-link" href="{% url 'milestone_list' %}">Hitos</a>
                 <a class="sidebar-link" href="{% url 'seguimiento_list' %}">Seguimiento</a>
             </nav>
 
             <p class="nav-section-title">Control</p>
             <nav>
-                <a class="sidebar-link" href="{% url 'stakeholders:stakeholder_list' %}">Interesados</a>
-                <a class="sidebar-link" href="{% url 'stakeholders:feedback_list' %}">Feedback</a>
-                <a class="sidebar-link" href="{% url 'resources:resource_list' %}">Recursos</a>
-                <a class="sidebar-link" href="{% url 'risks:risk_list' %}">Riesgos</a>
                 <a class="sidebar-link" href="{% url 'reports:report_list' %}">Reportes</a>
                 <a class="sidebar-link" href="{% url 'change_request_list' %}">Solicitudes de cambio</a>
                 <a class="sidebar-link" href="{% url 'notification_list' %}">Notificaciones</a>

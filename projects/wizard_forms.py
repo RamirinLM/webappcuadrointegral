@@ -3,6 +3,7 @@ Formularios específicos para el Wizard de Creación de Proyectos
 """
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from .models import Project, ActaConstitucion, Alcance, Activity, Milestone
 from stakeholders.models import Stakeholder
 from risks.models import Risk
@@ -11,6 +12,18 @@ from resources.models import Resource
 
 class WizardProjectForm(forms.ModelForm):
     """Formulario para el Paso 1: Datos del Proyecto"""
+    
+    budget = forms.DecimalField(
+        max_digits=10, decimal_places=2, required=False,
+        validators=[MinValueValidator(0)],
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0',
+            'placeholder': '0.00'
+        }),
+        label='Presupuesto Estimado'
+    )
     
     class Meta:
         model = Project
@@ -211,8 +224,17 @@ class WizardRiskForm(forms.ModelForm):
 class WizardCommunicationForm(forms.Form):
     """Formulario para agregar comunicaciones en el Paso 5"""
     
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            from .permissions import get_user_projects
+            self.fields['stakeholder'].queryset = Stakeholder.objects.filter(
+                projects__in=get_user_projects(user)
+            ).distinct()
+    
     stakeholder = forms.ModelChoiceField(
-        queryset=Stakeholder.objects.all(),
+        queryset=Stakeholder.objects.none(),
         widget=forms.Select(attrs={'class': 'form-select'}),
         label='Interesado',
         required=False
@@ -301,6 +323,28 @@ class WizardActivityForm(forms.ModelForm):
 class WizardResourceForm(forms.ModelForm):
     """Formulario para agregar recursos a una actividad en el Paso 6"""
     
+    quantity = forms.IntegerField(
+        initial=1,
+        validators=[MinValueValidator(1)],
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'min': '1',
+            'value': '1'
+        }),
+        label='Cantidad'
+    )
+    cost_per_unit = forms.DecimalField(
+        max_digits=10, decimal_places=2,
+        validators=[MinValueValidator(0)],
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'step': '0.01',
+            'min': '0',
+            'placeholder': '0.00'
+        }),
+        label='Costo por Unidad'
+    )
+    
     class Meta:
         model = Resource
         fields = ['name', 'type', 'quantity', 'cost_per_unit', 'description']
@@ -312,17 +356,6 @@ class WizardResourceForm(forms.ModelForm):
             }),
             'type': forms.Select(attrs={
                 'class': 'form-select'
-            }),
-            'quantity': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'min': '1',
-                'value': '1'
-            }),
-            'cost_per_unit': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'min': '0',
-                'placeholder': '0.00'
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',

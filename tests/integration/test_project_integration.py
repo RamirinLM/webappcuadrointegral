@@ -325,17 +325,45 @@ class BudgetCalculationsTest(TestCase):
         self.assertEqual(self.project.total_resources_cost, Decimal('2000.00'))
 
     def test_budget_utilization(self):
+        """Utilización usa costo REAL (actual_cost), no planificado."""
         Activity.objects.create(
             project=self.project,
             name='Activity',
             description='Test',
             start_date=date.today(),
             end_date=date.today() + timedelta(days=10),
-            cost=Decimal('10000.00')
+            cost=Decimal('10000.00'),
+            actual_cost=Decimal('10000.00'),
         )
-        self.assertEqual(self.project.budget_utilization_percentage, 50.0)
+        self.assertEqual(self.project.budget_utilization_percentage, Decimal('50.0'))
+
+    def test_budget_utilization_zero_when_no_actual_cost(self):
+        """Sin costos reales registrados, utilización = 0%."""
+        Activity.objects.create(
+            project=self.project,
+            name='Activity',
+            description='Test',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=10),
+            cost=Decimal('10000.00'),
+        )
+        self.assertEqual(self.project.budget_utilization_percentage, 0)
+
+    def test_budget_utilization_with_partial_actual(self):
+        """Costo real parcial versus planificado."""
+        Activity.objects.create(
+            project=self.project,
+            name='Activity',
+            description='Test',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=10),
+            cost=Decimal('10000.00'),
+            actual_cost=Decimal('5000.00'),
+        )
+        self.assertEqual(self.project.budget_utilization_percentage, Decimal('25.0'))
 
     def test_budget_variance(self):
+        """Desviación de presupuesto: budget - costo planificado."""
         Activity.objects.create(
             project=self.project,
             name='Activity',
@@ -345,6 +373,42 @@ class BudgetCalculationsTest(TestCase):
             cost=Decimal('15000.00')
         )
         self.assertEqual(self.project.budget_variance, Decimal('5000.00'))
+
+    def test_planned_vs_actual_variance(self):
+        """Desviación de ejecución: planificado - real."""
+        Activity.objects.create(
+            project=self.project,
+            name='Activity',
+            description='Test',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=10),
+            cost=Decimal('10000.00'),
+            actual_cost=Decimal('8000.00'),
+        )
+        self.assertEqual(self.project.planned_vs_actual_variance, Decimal('2000.00'))
+
+    def test_total_actual_cost_sums_actual_cost(self):
+        """total_actual_cost suma actual_cost (NO cost planificado)."""
+        Activity.objects.create(
+            project=self.project,
+            name='A1',
+            description='Test',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=10),
+            cost=Decimal('5000.00'),
+            actual_cost=Decimal('3000.00'),
+        )
+        Activity.objects.create(
+            project=self.project,
+            name='A2',
+            description='Test',
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=10),
+            cost=Decimal('5000.00'),
+            actual_cost=Decimal('4000.00'),
+        )
+        self.assertEqual(self.project.total_actual_cost, Decimal('7000.00'))
+        self.assertEqual(self.project.total_planned_cost, Decimal('10000.00'))
 
 
 class MilestonePhaseGateTest(TestCase):

@@ -125,6 +125,13 @@ function addStakeholder() {
         return;
     }
 
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert('El correo electrónico no tiene un formato válido.');
+        return;
+    }
+
     const stakeholder = {
         id: 'new_' + Date.now(),
         name: name,

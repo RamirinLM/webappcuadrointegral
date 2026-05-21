@@ -162,7 +162,7 @@
         </div>
 
         <div class="page-actions justify-content-end mt-4">
-            <a href="{% url 'activity_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <a href="{% url 'activity_list' project.pk %}" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">{% if form.instance.pk %}Guardar cambios{% else %}Crear actividad{% endif %}</button>
         </div>
     </form>

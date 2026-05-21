@@ -13,7 +13,7 @@
         </div>
         <div class="page-actions">
             <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
-            <a href="{% url 'activity_create' %}" class="btn btn-primary">Nueva actividad</a>
+            <a href="{% url 'activity_create' project.pk %}" class="btn btn-primary">Nueva actividad</a>
         </div>
     </div>
 
@@ -78,8 +78,8 @@
                             {% endwith %}
                         </td>
                         <td class="text-nowrap">
-                            <a href="{% url 'activity_edit' activity.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
-                            <a href="{% url 'activity_assign_user' activity.pk %}" class="btn btn-sm btn-outline-secondary">Asignar</a>
+                            <a href="{% url 'activity_edit' project.pk activity.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                            <a href="{% url 'activity_assign_user' project.pk activity.pk %}" class="btn btn-sm btn-outline-secondary">Asignar</a>
                         </td>
                     </tr>
                     {% empty %}

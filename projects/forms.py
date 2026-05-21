@@ -73,7 +73,17 @@ class ActivityForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
+
+        # Descripción opcional (el modelo no tiene blank=True, se maneja a nivel form)
+        self.fields['description'].required = False
+
+        # Filtrar proyectos a los que el usuario tiene acceso
+        if user:
+            from .permissions import get_user_projects
+            self.fields["project"].queryset = get_user_projects(user)
+
         # Filtrar predecesoras: solo actividades del mismo proyecto, excluyendo la actual.
         if self.instance and self.instance.pk and self.instance.project:
             self.fields["predecessor"].queryset = Activity.objects.filter(project=self.instance.project).exclude(
@@ -151,6 +161,13 @@ class MilestoneForm(forms.ModelForm):
             "is_phase_gate": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "completed": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        super().__init__(*args, **kwargs)
+        if user:
+            from .permissions import get_user_projects
+            self.fields["project"].queryset = get_user_projects(user)
 
     def clean(self):
         cleaned_data = super().clean()

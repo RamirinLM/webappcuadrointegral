@@ -20,12 +20,16 @@
                 <label class="form-label">Nombre de la actividad *</label>
                 <input type="text" class="form-control" id="activity-name" placeholder="Ej: Analisis de requerimientos">
             </div>
-            <div class="col-md-6 mb-3">
-                <label class="form-label">Costo estimado</label>
+            <div class="col-md-3 mb-3">
+                <label class="form-label">Costo calculado</label>
                 <div class="input-group">
                     <span class="input-group-text">$</span>
-                    <input type="number" class="form-control" id="activity-cost" step="0.01" min="0" placeholder="0.00">
+                    <input type="text" class="form-control" id="activity-cost-display" value="0.00" readonly style="background:#f0f0f0;">
                 </div>
+                <small class="text-muted">Se calcula desde los recursos</small>
+            </div>
+            <div class="col-md-3 mb-3 d-flex align-items-end justify-content-end">
+                <span id="resource-count-badge" class="badge bg-secondary fs-6 px-3 py-2">0 recursos</span>
             </div>
         </div>
 
@@ -122,7 +126,7 @@
 </div>
 
 <script>
-var activities_data = {{ activities|escapejs }};
+var activities_data = {{ activities_json|safe }};
 let activities = activities_data || [];
 
 if (activities.length > 0) {
@@ -196,6 +200,16 @@ function validateActivityDates() {
     return !hasError;
 }
 
+function calcResourcesTotal() {
+    return currentResources.reduce((sum, r) => sum + (r.quantity * r.cost_per_unit), 0);
+}
+
+function updateCostDisplay() {
+    const total = calcResourcesTotal();
+    document.getElementById('activity-cost-display').value = total.toFixed(2);
+    document.getElementById('resource-count-badge').textContent = currentResources.length + ' recurso' + (currentResources.length !== 1 ? 's' : '');
+}
+
 function addResourceToActivity() {
     const name = document.getElementById('resource-name').value;
     if (!name) {
@@ -203,16 +217,29 @@ function addResourceToActivity() {
         return;
     }
 
+    const quantity = parseInt(document.getElementById('resource-quantity').value) || 0;
+    if (quantity < 1) {
+        alert('La cantidad debe ser al menos 1.');
+        return;
+    }
+
+    const costPerUnit = parseFloat(document.getElementById('resource-cost').value) || 0;
+    if (costPerUnit < 0) {
+        alert('El costo por unidad no puede ser negativo.');
+        return;
+    }
+
     const resource = {
         id: 'res_' + Date.now(),
         name: name,
         type: document.getElementById('resource-type').value,
-        quantity: parseInt(document.getElementById('resource-quantity').value) || 1,
-        cost_per_unit: parseFloat(document.getElementById('resource-cost').value) || 0
+        quantity: quantity,
+        cost_per_unit: costPerUnit
     };
 
     currentResources.push(resource);
     updateCurrentResourcesList();
+    updateCostDisplay();
     document.getElementById('resource-name').value = '';
     document.getElementById('resource-quantity').value = '1';
     document.getElementById('resource-cost').value = '';
@@ -221,6 +248,7 @@ function addResourceToActivity() {
 function removeCurrentResource(id) {
     currentResources = currentResources.filter(r => r.id !== id);
     updateCurrentResourcesList();
+    updateCostDisplay();
 }
 
 function updateCurrentResourcesList() {
@@ -258,7 +286,7 @@ function addActivity() {
         description: document.getElementById('activity-description').value,
         start_date: document.getElementById('activity-start').value,
         end_date: document.getElementById('activity-end').value,
-        cost: parseFloat(document.getElementById('activity-cost').value) || 0,
+        cost: calcResourcesTotal(),
         predecessor: document.getElementById('activity-predecessor').value,
         resources: [...currentResources]
     };
@@ -294,7 +322,7 @@ function updateActivitiesList() {
             <div class="item-info">
                 <div class="item-title"><span class="badge bg-primary me-2">${index + 1}</span>${a.name}</div>
                 <div class="item-details">
-                    ${a.start_date ? a.start_date : ''}${a.end_date ? ' -> ' + a.end_date : ''}${a.cost ? ' | $' + a.cost : ''}
+                    ${a.start_date ? a.start_date : ''}${a.end_date ? ' -> ' + a.end_date : ''} | <strong>$${a.resources.reduce((s, r) => s + (r.quantity * r.cost_per_unit), 0).toFixed(2)}</strong>
                     ${a.resources.length > 0 ? '<br>Recursos: ' + a.resources.map(r => `<span class="badge bg-light text-dark me-1">${typeLabels[r.type]} ${r.name}</span>`).join('') : ''}
                 </div>
             </div>
@@ -312,9 +340,7 @@ function updateSummary() {
     document.getElementById('total-activities').textContent = activities.length;
 
     const totalCost = activities.reduce((sum, a) => {
-        const activityCost = parseFloat(a.cost) || 0;
-        const resourcesCost = a.resources.reduce((rsum, r) => rsum + (r.quantity * r.cost_per_unit), 0);
-        return sum + activityCost + resourcesCost;
+        return sum + a.resources.reduce((rsum, r) => rsum + (r.quantity * r.cost_per_unit), 0);
     }, 0);
     document.getElementById('total-cost').textContent = '$' + totalCost.toFixed(2);
 
@@ -334,10 +360,10 @@ function clearActivityForm() {
     document.getElementById('activity-description').value = '';
     document.getElementById('activity-start').value = '';
     document.getElementById('activity-end').value = '';
-    document.getElementById('activity-cost').value = '';
     document.getElementById('activity-predecessor').value = '';
     currentResources = [];
     updateCurrentResourcesList();
+    updateCostDisplay();
 
     const activityStart = document.getElementById('activity-start');
     const activityEnd = document.getElementById('activity-end');

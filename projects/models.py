@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from decimal import Decimal
 
 
 class UserProfile(models.Model):
@@ -33,12 +34,21 @@ class Seguimiento(models.Model):
     cpi = models.DecimalField(max_digits=5, decimal_places=2, editable=False, verbose_name='CPI (Cost Performance Index)', default=0)
     spi = models.DecimalField(max_digits=5, decimal_places=2, editable=False, verbose_name='SPI (Schedule Performance Index)', default=0)
 
+    def _activity_total_planned(self, activity):
+        """Costo planificado de una actividad (sin incluir recursos)."""
+        return activity.total_planned_cost
+
+    def _activity_total_actual(self, activity):
+        """Costo real de una actividad (sin incluir recursos)."""
+        return activity.total_actual_cost
+
     def calculate_metrics(self):
         """
         Calcula métricas EVM usando fechas reales de las actividades.
-        
+        Los costos NO incluyen recursos (son desglose del costo de actividad).
+
         PV (Planned Value):   Suma del costo planificado de actividades cuyo
-                              end_date planificado ≤ fecha del seguimiento.
+                              fin PLANIFICADO es ≤ fecha de corte.
         EV (Earned Value):    Suma del costo planificado de actividades que
                               YA se completaron (actual_end_date ≤ fecha).
         AC (Actual Cost):     Suma del costo REAL de actividades completadas.
@@ -52,30 +62,27 @@ class Seguimiento(models.Model):
         
         activities = self.proyecto.activity_set.all()
         
-        # PV: costo planificado de actividades cuyo fin PLANIFICADO es ≤ fecha de corte
+        # PV: costo planificado (actividad + recursos) de actividades cuyo fin PLANIFICADO es ≤ fecha de corte
         pv_activities = activities.filter(end_date__lte=self.fecha)
-        self.pv = Decimal(sum(activity.cost or 0 for activity in pv_activities))
+        self.pv = Decimal(str(sum(self._activity_total_planned(a) for a in pv_activities)))
         
-        # EV: costo PLANIFICADO de actividades COMPLETADAS (con fecha real ≤ fecha de corte)
-        # Si no tiene actual_end_date pero está completa, usa la planificada
+        # EV: costo PLANIFICADO (actividad + recursos) de actividades COMPLETADAS
         ev_activities = activities.filter(
             status='completed',
             actual_end_date__lte=self.fecha
         )
-        # También incluir actividades completadas sin actual_end_date
-        # cuyo end_date planificado ≤ fecha (fallback para compatibilidad)
         ev_fallback = activities.filter(
             status='completed',
             actual_end_date__isnull=True,
             end_date__lte=self.fecha
         )
         ev_set = ev_activities | ev_fallback
-        self.ev = Decimal(sum(a.cost or 0 for a in ev_set.distinct()))
+        self.ev = Decimal(str(sum(self._activity_total_planned(a) for a in ev_set.distinct())))
         
-        # AC: costo REAL de las actividades completadas (fallback a planificado si no hay real)
+        # AC: costo REAL (actividad + recursos) de actividades completadas
         ac_total = Decimal('0')
         for a in ev_set.distinct():
-            ac_total += Decimal(str(a.actual_cost)) if a.actual_cost is not None else Decimal(str(a.cost or 0))
+            ac_total += self._activity_total_actual(a)
         self.ac = ac_total
         
         # SV = EV - PV
@@ -292,10 +299,12 @@ class Project(models.Model):
 
     @property
     def total_activities_cost(self):
-        """Suma de costos de todas las actividades del proyecto"""
+        """Suma de costos planificados de todas las actividades (desde resources)."""
         from django.db.models import Sum
         result = self.activity_set.aggregate(total=Sum('cost'))
         return result['total'] or 0
+
+    total_planned_cost = total_activities_cost
 
     @property
     def total_resources_cost(self):
@@ -311,20 +320,29 @@ class Project(models.Model):
 
     @property
     def total_actual_cost(self):
-        """Costo real total del proyecto (actividades + recursos)"""
-        return self.total_activities_cost + self.total_resources_cost
+        """Costo real total del proyecto = suma de actual_cost de cada actividad."""
+        from django.db.models import Sum
+        result = self.activity_set.aggregate(total=Sum('actual_cost'))
+        return result['total'] or 0
 
     @property
     def budget_variance(self):
-        """Diferencia entre presupuesto y costo real (positivo = bajo presupuesto)"""
+        """Desviación del presupuesto: presupuesto - costo planificado.
+        Positivo = estamos por debajo del presupuesto planificado."""
         if self.budget:
-            return self.budget - self.total_actual_cost
+            return self.budget - self.total_planned_cost
         return None
 
     @property
+    def planned_vs_actual_variance(self):
+        """Desviación de ejecución: costo planificado - costo real.
+        Positivo = gastamos menos de lo planificado."""
+        return self.total_planned_cost - self.total_actual_cost
+
+    @property
     def budget_utilization_percentage(self):
-        """Porcentaje de utilización del presupuesto"""
-        if self.budget and self.budget > 0:
+        """Porcentaje de utilización del presupuesto (costo real vs presupuesto)"""
+        if self.budget and self.budget > 0 and self.total_actual_cost:
             return round((self.total_actual_cost / self.budget) * 100, 1)
         return 0
 
@@ -626,17 +644,52 @@ class Activity(models.Model):
             actual_end = date.today()  # en progreso: contra hoy
         return (planned_end - actual_end).days
 
+    # ── Costos totales incluyendo recursos ────────────────────────────
+
+    @property
+    def total_planned_cost(self):
+        """Costo planificado = suma de recursos de la actividad (quantity * cost_per_unit).
+        Si no tiene recursos, usa self.cost como fallback para datos existentes."""
+        from resources.models import Resource
+        res = Resource.objects.filter(activity=self).aggregate(
+            total=models.Sum('total_cost')
+        )['total'] or 0
+        if res:
+            return res
+        return self.cost or 0  # fallback: actividades sin recursos
+
+    def update_cost_from_resources(self):
+        """Sincroniza self.cost con la suma de recursos."""
+        from resources.models import Resource
+        total = Resource.objects.filter(activity=self).aggregate(
+            total=models.Sum('total_cost')
+        )['total'] or 0
+        if total:
+            # Evitar recursión: guardar sin full_clean(), solo el campo cost
+            Activity.objects.filter(pk=self.pk).update(cost=total)
+            self.cost = total
+        return self.cost or 0
+
+    @property
+    def total_actual_cost(self):
+        """Costo real de la actividad.
+        Usa actual_cost si existe, sino usa el costo planificado (que = suma de recursos)."""
+        if self.actual_cost is not None:
+            return self.actual_cost
+        return self.cost or 0
+
     @property
     def cost_variance(self):
         """
-        Diferencia entre costo planificado y real.
+        Diferencia entre costo planificado y real de la actividad.
         Positivo = gasté menos de lo planificado (bajo presupuesto).
         Negativo = gasté más de lo planificado (sobrepresupuesto).
         """
-        if self.cost is None:
+        planned = self.total_planned_cost
+        actual = self.total_actual_cost
+        if planned is None:
             return None
-        actual = self.actual_cost if self.actual_cost is not None else 0
-        return self.cost - actual
+        return planned - actual
 
     @property
     def is_behind_schedule(self):
@@ -746,11 +799,12 @@ class ProjectCut(models.Model):
 
     @property
     def planned_cost(self):
-        """Suma del costo planificado de las actividades del período (PV)."""
+        """Suma del costo planificado de las actividades del período (sin recursos)."""
         from decimal import Decimal
-        from django.db.models import Sum
-        result = self.activities_in_period.aggregate(total=Sum('cost'))
-        return result['total'] or Decimal('0')
+        total = Decimal('0')
+        for act in self.activities_in_period:
+            total += act.total_planned_cost
+        return total
 
     @property
     def pv(self):
@@ -772,24 +826,25 @@ class ProjectCut(models.Model):
     @property
     def ev(self):
         """
-        EV (Earned Value) = suma del costo PLANIFICADO de las actividades
-        del período que YA fueron completadas.
-        """
-        from decimal import Decimal
-        from django.db.models import Sum
-        result = self.completed_activities.aggregate(total=Sum('cost'))
-        return result['total'] or Decimal('0')
-
-    @property
-    def ac(self):
-        """
-        AC (Actual Cost) = suma del costo REAL de las actividades
-        del período que fueron completadas.
+        EV (Earned Value) = suma del costo PLANIFICADO
+        de las actividades del período que YA fueron completadas.
         """
         from decimal import Decimal
         total = Decimal('0')
         for act in self.completed_activities:
-            total += Decimal(str(act.actual_cost)) if act.actual_cost is not None else Decimal('0')
+            total += act.total_planned_cost
+        return total
+
+    @property
+    def ac(self):
+        """
+        AC (Actual Cost) = suma del costo REAL
+        de las actividades del período que fueron completadas.
+        """
+        from decimal import Decimal
+        total = Decimal('0')
+        for act in self.completed_activities:
+            total += act.total_actual_cost
         return total
 
     # ── Variaciones ──────────────────────────────────────────────────────

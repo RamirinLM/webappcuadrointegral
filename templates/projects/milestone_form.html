@@ -67,7 +67,7 @@
 
         <div class="page-actions justify-content-end mt-4">
             <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
-            <a href="{% url 'milestone_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <a href="{% url 'milestone_list' project.pk %}" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Guardar hito</button>
         </div>
     </form>

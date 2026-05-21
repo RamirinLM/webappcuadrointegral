@@ -45,7 +45,7 @@
                 {% endfor %}
 
                 <div class="page-actions justify-content-end mt-4">
-                    <a href="{% url 'activity_list' %}" class="btn btn-outline-secondary">Volver a actividades</a>
+                    <a href="{% url 'activity_list' project.pk %}" class="btn btn-outline-secondary">Volver a actividades</a>
                     <button type="submit" class="btn btn-primary">Guardar asignacion</button>
                 </div>
             </form>

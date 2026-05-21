@@ -27,11 +27,7 @@
             <div class="metric-value">${{ activities_cost|floatformat:2 }}</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">Costo recursos</div>
-            <div class="metric-value">${{ resources_cost|floatformat:2 }}</div>
-        </div>
-        <div class="metric-card">
-            <div class="metric-label">Costo total real</div>
+            <div class="metric-label">Costo real</div>
             <div class="metric-value">${{ total_cost|floatformat:2 }}</div>
         </div>
     </div>
@@ -141,17 +137,15 @@
                         <th>${{ activities_cost|floatformat:2 }}</th>
                         <th>${{ total_cost|floatformat:2 }}</th>
                         <th>
-                            {% if variance is not None %}
-                                {% if variance < 0 %}
-                                    <span class="text-danger fw-bold">${{ variance|floatformat:2 }}</span>
-                                {% elif variance > 0 %}
-                                    <span class="text-success fw-bold">+${{ variance|floatformat:2 }}</span>
+                            {% with var_ejec=project.planned_vs_actual_variance %}
+                                {% if var_ejec < 0 %}
+                                    <span class="text-danger fw-bold">${{ var_ejec|floatformat:2 }}</span>
+                                {% elif var_ejec > 0 %}
+                                    <span class="text-success fw-bold">+${{ var_ejec|floatformat:2 }}</span>
                                 {% else %}
                                     <span class="text-muted">$0.00</span>
                                 {% endif %}
-                            {% else %}
-                                <span class="text-muted">N/A</span>
-                            {% endif %}
+                            {% endwith %}
                         </th>
                     </tr>
                 </tfoot>

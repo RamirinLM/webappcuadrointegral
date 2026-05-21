@@ -113,13 +113,21 @@ def project_detail(request, pk):
         messages.error(request, "No tienes permisos para ver este proyecto.")
         return redirect("project_list")
 
+    from risks.models import Risk
+
+    activities = project.activity_set.all().prefetch_related('resource_set')
+
     return render(
         request,
         "projects/project_detail.html",
         {
             "project": project,
-            "activities": project.activity_set.all(),
+            "activities": activities,
             "milestones": project.milestone_set.all(),
+            "stakeholders": project.stakeholders.all(),
+            "risks": Risk.objects.filter(project=project),
+            "communications": project.comunicacion_set.all(),
+            "alcance": getattr(project, 'alcance', None),
             "total_activities_cost": project.total_activities_cost,
             "total_resources_cost": project.total_resources_cost,
             "total_cost": project.total_actual_cost,
@@ -190,28 +198,40 @@ def project_delete(request, pk):
 
 
 @login_required
-def activity_list(request):
-    activities = Activity.objects.filter(project__in=get_user_projects(request.user)).select_related("project", "predecessor")
+def activity_list(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    if not can_view_project(request.user, project):
+        messages.error(request, "No tienes permisos para ver este proyecto.")
+        return redirect("project_list")
+
+    activities = project.activity_set.all().select_related("predecessor")
     return render(
         request,
         "projects/activity_list.html",
-        {"activities": activities, "is_jefe_departamental": is_jefe_departamental(request.user)},
+        {
+            "activities": activities,
+            "project": project,
+            "is_jefe_departamental": is_jefe_departamental(request.user),
+        },
     )
 
 
 @login_required
-def activity_create(request):
+def activity_create(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    if not can_edit_project(request.user, project):
+        messages.error(request, "No tienes permisos para crear actividades en este proyecto.")
+        return redirect("project_detail", pk=project.pk)
+
     if request.method == "POST":
-        form = ActivityForm(request.POST)
+        form = ActivityForm(request.POST, user=request.user)
         if form.is_valid():
             try:
                 activity = form.save(commit=False)
-                if not can_edit_project(request.user, activity.project):
-                    messages.error(request, "No tienes permisos para crear actividades en este proyecto.")
-                    return redirect("activity_list")
+                activity.project = project
                 activity.save()
                 messages.success(request, "Actividad creada exitosamente.")
-                return redirect("activity_list")
+                return redirect("activity_list", project_id=project.pk)
             except Exception as exc:
                 messages.error(request, f"Error al crear la actividad: {exc}")
         else:
@@ -219,24 +239,25 @@ def activity_create(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = ActivityForm()
-    return render(request, "projects/activity_form.html", {"form": form})
+        form = ActivityForm(user=request.user, initial={"project": project})
+    return render(request, "projects/activity_form.html", {"form": form, "project": project})
 
 
 @login_required
-def activity_edit(request, pk):
-    activity = get_object_or_404(Activity, pk=pk)
+def activity_edit(request, project_id, pk):
+    project = get_object_or_404(Project, pk=project_id)
+    activity = get_object_or_404(Activity, pk=pk, project=project)
     if not can_edit_project(request.user, activity.project):
         messages.error(request, "No tienes permisos para editar esta actividad.")
-        return redirect("activity_list")
+        return redirect("activity_list", project_id=project.pk)
 
     if request.method == "POST":
-        form = ActivityForm(request.POST, instance=activity)
+        form = ActivityForm(request.POST, instance=activity, user=request.user)
         if form.is_valid():
             try:
                 form.save()
                 messages.success(request, "Actividad actualizada exitosamente.")
-                return redirect("activity_list")
+                return redirect("activity_list", project_id=project.pk)
             except Exception as exc:
                 messages.error(request, f"Error al actualizar: {exc}")
         else:
@@ -244,37 +265,45 @@ def activity_edit(request, pk):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     else:
-        form = ActivityForm(instance=activity)
+        form = ActivityForm(instance=activity, user=request.user)
 
-    return render(request, "projects/activity_form.html", {"form": form, "activity": activity})
+    return render(request, "projects/activity_form.html", {"form": form, "activity": activity, "project": project})
 
 
 @login_required
-def milestone_list(request):
-    milestones = Milestone.objects.filter(project__in=get_user_projects(request.user))
+def milestone_list(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    if not can_view_project(request.user, project):
+        messages.error(request, "No tienes permisos para ver este proyecto.")
+        return redirect("project_list")
+
+    milestones = Milestone.objects.filter(project=project)
     return render(
         request,
         "projects/milestone_list.html",
-        {"milestones": milestones, "is_jefe_departamental": is_jefe_departamental(request.user)},
+        {"milestones": milestones, "project": project, "is_jefe_departamental": is_jefe_departamental(request.user)},
     )
 
 
 @login_required
-def milestone_create(request):
+def milestone_create(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    if not can_edit_project(request.user, project):
+        messages.error(request, "No tienes permisos para crear hitos en este proyecto.")
+        return redirect("project_detail", pk=project.pk)
+
     if request.method == "POST":
-        form = MilestoneForm(request.POST)
+        form = MilestoneForm(request.POST, user=request.user)
         if form.is_valid():
             milestone = form.save(commit=False)
-            if not can_edit_project(request.user, milestone.project):
-                messages.error(request, "No tienes permisos para crear hitos en este proyecto.")
-                return redirect("milestone_list")
+            milestone.project = project
             milestone.save()
             messages.success(request, "Hito creado exitosamente.")
-            return redirect("milestone_list")
+            return redirect("milestone_list", project_id=project.pk)
         messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
-        form = MilestoneForm()
-    return render(request, "projects/milestone_form.html", {"form": form})
+        form = MilestoneForm(user=request.user, initial={"project": project})
+    return render(request, "projects/milestone_form.html", {"form": form, "project": project})
 
 
 @jefe_departamental_required
@@ -601,6 +630,55 @@ def acta_constitucion_edit(request, project_id):
 
 
 @login_required
+def evm_curves(request, project_id):
+    """Curvas S de EVM: gráfico PV / EV / AC acumulados en el tiempo."""
+    import json
+    from decimal import Decimal
+
+    project = get_object_or_404(Project, pk=project_id)
+    if not can_view_project(request.user, project):
+        messages.error(request, "No tienes permisos para ver este proyecto.")
+        return redirect("dashboard")
+
+    seguimientos = Seguimiento.objects.filter(
+        proyecto=project
+    ).order_by("fecha")
+
+    chart_data = {
+        "labels": [s.fecha.isoformat() for s in seguimientos],
+        "pv": [float(s.pv or 0) for s in seguimientos],
+        "ev": [float(s.ev or 0) for s in seguimientos],
+        "ac": [float(s.ac or 0) for s in seguimientos],
+    }
+
+    latest = seguimientos.last()
+    metrics = {}
+    if latest:
+        metrics["sv"] = latest.sv
+        metrics["cv"] = latest.cv
+        metrics["spi"] = latest.spi
+        metrics["cpi"] = latest.cpi
+
+        # Mostrar PV, EV, AC del último corte (los que realmente se usan en los cálculos EVM)
+        metrics["pv"] = latest.pv
+        metrics["ev"] = latest.ev
+        metrics["ac"] = latest.ac
+        completed = project.activity_set.filter(status="completed").count()
+        total_acts = project.activity_set.count()
+
+        metrics["completed"] = completed
+        metrics["total_activities"] = total_acts
+
+    return render(request, "projects/evm_curves.html", {
+        "project": project,
+        "chart_data_json": json.dumps(chart_data),
+        "metrics": metrics,
+        "seguimientos": seguimientos,
+        "can_edit": can_edit_project(request.user, project),
+    })
+
+
+@login_required
 def project_financial_summary(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if not can_view_project(request.user, project):
@@ -614,7 +692,6 @@ def project_financial_summary(request, pk):
             "project": project,
             "budget": project.budget,
             "activities_cost": project.total_activities_cost,
-            "resources_cost": project.total_resources_cost,
             "total_cost": project.total_actual_cost,
             "variance": project.budget_variance,
             "utilization": project.budget_utilization_percentage,
@@ -625,11 +702,12 @@ def project_financial_summary(request, pk):
 
 
 @login_required
-def activity_assign_user(request, pk):
-    activity = get_object_or_404(Activity, pk=pk)
+def activity_assign_user(request, project_id, pk):
+    project = get_object_or_404(Project, pk=project_id)
+    activity = get_object_or_404(Activity, pk=pk, project=project)
     if not can_edit_project(request.user, activity.project):
         messages.error(request, "No tienes permisos para asignar usuarios en esta actividad.")
-        return redirect("activity_list")
+        return redirect("activity_list", project_id=project.pk)
 
     if request.method == "POST":
         form = ActivityAssignmentForm(request.POST)
@@ -638,7 +716,7 @@ def activity_assign_user(request, pk):
             assignment.activity = activity
             assignment.save()
             messages.success(request, f"Usuario asignado exitosamente a {activity.name}.")
-            return redirect("activity_list")
+            return redirect("activity_list", project_id=project.pk)
         messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
         form = ActivityAssignmentForm()
@@ -646,27 +724,28 @@ def activity_assign_user(request, pk):
     return render(
         request,
         "projects/activity_assignment_form.html",
-        {"form": form, "activity": activity, "existing_assignments": activity.assignments.all()},
+        {"form": form, "activity": activity, "project": project, "existing_assignments": activity.assignments.all()},
     )
 
 
 @jefe_departamental_required
 @login_required
-def milestone_edit(request, pk):
-    milestone = get_object_or_404(Milestone, pk=pk)
+def milestone_edit(request, project_id, pk):
+    project = get_object_or_404(Project, pk=project_id)
+    milestone = get_object_or_404(Milestone, pk=pk, project=project)
     if not can_edit_project(request.user, milestone.project):
         messages.error(request, "No tienes permisos para editar este hito.")
-        return redirect("milestone_list")
+        return redirect("milestone_list", project_id=project.pk)
     if request.method == "POST":
-        form = MilestoneForm(request.POST, instance=milestone)
+        form = MilestoneForm(request.POST, instance=milestone, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Hito actualizado exitosamente.")
-            return redirect("milestone_list")
+            return redirect("milestone_list", project_id=project.pk)
         messages.error(request, "Por favor corrija los errores en el formulario.")
     else:
-        form = MilestoneForm(instance=milestone)
-    return render(request, "projects/milestone_form.html", {"form": form, "milestone": milestone})
+        form = MilestoneForm(instance=milestone, user=request.user)
+    return render(request, "projects/milestone_form.html", {"form": form, "milestone": milestone, "project": project})
 
 
 @login_required

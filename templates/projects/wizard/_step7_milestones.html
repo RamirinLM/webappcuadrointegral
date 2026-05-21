@@ -104,14 +104,11 @@
 </div>
 
 <script>
-let milestones = [];
-{% if milestones %}
-milestones = {{ milestones|escapejs }};
+let milestones = {{ milestones_json|safe }};
 if (milestones.length > 0) {
     updateMilestonesList();
     updateTimeline();
 }
-{% endif %}
 
 let projectActivities = [];
 let projectStartDate = '';
@@ -120,14 +117,19 @@ let projectEndDate = '';
 {% if existing_activities %}
 projectActivities = [
     {% for act in existing_activities %}
-    { id: '{{ act.id }}', name: '{{ act.name }}' },
+    { id: '{{ act.id }}', name: '{{ act.name|escapejs }}' },
     {% endfor %}
 ];
 {% endif %}
 
 {% if activities %}
+// Agregar actividades de la sesión si no están ya (por si tienen IDs reales distintos)
+var existingIds = {};
+projectActivities.forEach(function(a) { existingIds[a.id] = true; });
 {% for act in activities %}
-projectActivities.push({ id: '{{ act.id }}', name: '{{ act.name }}' });
+if (!existingIds['{{ act.id }}']) {
+    projectActivities.push({ id: '{{ act.id }}', name: '{{ act.name|escapejs }}' });
+}
 {% endfor %}
 {% endif %}
 

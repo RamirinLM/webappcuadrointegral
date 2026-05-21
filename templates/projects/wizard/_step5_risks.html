@@ -151,21 +151,15 @@
 </div>
 
 <script>
-let risks = [];
-{% if risks %}
-risks = {{ risks|escapejs }};
+let risks = {{ risks_json|safe }};
 if (risks.length > 0) {
     updateRisksList();
 }
-{% endif %}
 
-let communications = [];
-{% if communications %}
-communications = {{ communications|escapejs }};
+let communications = {{ communications_json|safe }};
 if (communications.length > 0) {
     updateCommunicationsList();
 }
-{% endif %}
 
 function addRisk() {
     const description = document.getElementById('risk-description').value.trim();

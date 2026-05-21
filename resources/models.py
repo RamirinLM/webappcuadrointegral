@@ -1,4 +1,5 @@
 from django.db import models
+from decimal import Decimal
 from projects.models import Activity
 
 class Resource(models.Model):
@@ -18,8 +19,21 @@ class Resource(models.Model):
     description = models.TextField(blank=True, verbose_name='Descripción')
 
     def save(self, *args, **kwargs):
-        self.total_cost = self.quantity * self.cost_per_unit
+        # Defensa contra tipos incorrectos (ej. strings de serialize_form_data)
+        # Django no convierte field values automáticamente en __init__ con kwargs
+        qty = int(self.quantity) if not isinstance(self.quantity, int) else self.quantity
+        cpu = Decimal(str(self.cost_per_unit)) if not isinstance(self.cost_per_unit, Decimal) else self.cost_per_unit
+        self.total_cost = qty * cpu
         super().save(*args, **kwargs)
+        # Mantener sincronizado el costo de la actividad padre
+        if self.activity_id:
+            self.activity.update_cost_from_resources()
+
+    def delete(self, *args, **kwargs):
+        act = self.activity
+        super().delete(*args, **kwargs)
+        if act:
+            act.update_cost_from_resources()
 
     def __str__(self):
         activity_name = self.activity.name if self.activity else "Sin actividad"

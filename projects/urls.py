@@ -19,13 +19,15 @@ urlpatterns = [
     path('projects/<int:pk>/delete/', views.project_delete, name='project_delete'),
     path('projects/<int:pk>/financial/', views.project_financial_summary, name='project_financial_summary'),
     path('projects/<int:pk>/approve/', views.project_approve, name='project_approve'),
-    path('activities/', views.activity_list, name='activity_list'),
-    path('activities/create/', views.activity_create, name='activity_create'),
-    path('activities/<int:pk>/edit/', views.activity_edit, name='activity_edit'),
-    path('activities/<int:pk>/assign/', views.activity_assign_user, name='activity_assign_user'),
-    path('milestones/', views.milestone_list, name='milestone_list'),
-    path('milestones/create/', views.milestone_create, name='milestone_create'),
-    path('milestones/<int:pk>/edit/', views.milestone_edit, name='milestone_edit'),
+    # Actividades — scoped por proyecto
+    path('projects/<int:project_id>/activities/', views.activity_list, name='activity_list'),
+    path('projects/<int:project_id>/activities/create/', views.activity_create, name='activity_create'),
+    path('projects/<int:project_id>/activities/<int:pk>/edit/', views.activity_edit, name='activity_edit'),
+    path('projects/<int:project_id>/activities/<int:pk>/assign/', views.activity_assign_user, name='activity_assign_user'),
+    # Hitos — scoped por proyecto
+    path('projects/<int:project_id>/milestones/', views.milestone_list, name='milestone_list'),
+    path('projects/<int:project_id>/milestones/create/', views.milestone_create, name='milestone_create'),
+    path('projects/<int:project_id>/milestones/<int:pk>/edit/', views.milestone_edit, name='milestone_edit'),
     path('users/', views.user_list, name='user_list'),
     path('users/create/', views.user_create, name='user_create'),
     path('users/<int:pk>/edit/', views.user_edit, name='user_edit'),
@@ -37,6 +39,8 @@ urlpatterns = [
     path('projects/<int:project_id>/linea-base/', views.linea_base_seguimiento, name='linea_base_seguimiento'),
     # Cortes del proyecto — períodos de revisión
     path('projects/<int:project_id>/cortes/', views.project_cuts, name='project_cuts'),
+    # Curvas S — gráfico EVM
+    path('projects/<int:project_id>/evm-curvas/', views.evm_curves, name='evm_curves'),
     path('acta/<int:project_id>/create/', views.acta_constitucion_create, name='acta_constitucion_create'),
     path('acta/<int:project_id>/edit/', views.acta_constitucion_edit, name='acta_constitucion_edit'),
     # Solicitudes de cambio

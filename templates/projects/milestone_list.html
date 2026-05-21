@@ -13,7 +13,7 @@
         </div>
         <div class="page-actions">
             <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
-            <a href="{% url 'milestone_create' %}" class="btn btn-primary">Nuevo hito</a>
+            <a href="{% url 'milestone_create' project.pk %}" class="btn btn-primary">Nuevo hito</a>
         </div>
     </div>
 
@@ -39,7 +39,7 @@
                         <td>{{ milestone.get_phase_display }}</td>
                         <td><span class="status-chip">{% if milestone.completed %}Completado{% else %}Pendiente{% endif %}</span></td>
                         <td class="text-nowrap">
-                            <a href="{% url 'milestone_edit' milestone.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                            <a href="{% url 'milestone_edit' project.pk milestone.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
                         </td>
                     </tr>
                     {% empty %}

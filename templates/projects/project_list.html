@@ -45,7 +45,7 @@
                         {% endif %}
                         <td class="text-nowrap">
                             <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-outline-primary">Detalle</a>
-                            <a href="{% url 'project_edit' project.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            <a href="{% url 'project_edit_wizard' project.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
                             <a href="{% url 'project_delete' project.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
                         </td>
                     </tr>

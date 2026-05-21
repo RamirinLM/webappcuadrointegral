@@ -5,15 +5,46 @@
 {% block page_heading %}Acceso al sistema{% endblock %}
 {% block page_summary %}Ingresa con tus credenciales para acceder a proyectos, reportes y seguimiento.{% endblock %}
 
+{% block extra_css %}
+<style>
+    .login-header-bar {
+        background: linear-gradient(135deg, var(--cmi-celeste), var(--cmi-celeste-dark));
+        height: 8px;
+        border-radius: 1.25rem 1.25rem 0 0;
+        margin: -1.25rem -1.25rem 0;
+    }
+    .login-logo-wrap {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1rem;
+        background: var(--cmi-celeste);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0.25rem 1rem rgba(138, 207, 235, 0.35);
+    }
+    .login-logo-wrap img {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
+<div class="row justify-content-center" style="margin-top: 2rem;">
     <div class="col-12 col-md-8 col-lg-5">
-        <section class="content-card p-4 p-lg-5">
-            <div class="text-center mb-4">
-                <img src="{% static 'logo.png' %}" alt="Logo institucional" class="img-fluid rounded-4 shadow-sm" style="max-width: 96px;">
+        <section class="content-card p-4 p-lg-5" style="padding-top: 0 !important;">
+            <div class="login-header-bar"></div>
+            <div class="text-center mb-3 mt-4">
+                <div class="login-logo-wrap">
+                    <img src="{% static 'logo.png' %}" alt="Logo institucional">
+                </div>
+                <h2 class="h3 mb-1">Iniciar sesion</h2>
+                <p class="text-muted mb-0">Usa tu cuenta institucional para continuar.</p>
             </div>
-            <h2 class="h3 text-center mb-3">Iniciar sesion</h2>
-            <p class="text-muted text-center mb-4">Usa tu cuenta institucional para continuar.</p>
 
             {% if form.errors %}
             <div class="alert alert-danger" role="alert">

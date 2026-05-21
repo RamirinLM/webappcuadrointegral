@@ -41,10 +41,11 @@
             </span>
             <span class="status-chip">{{ project.get_status_display }}</span>
             {% if can_edit %}
-            <a href="{% url 'project_edit' project.pk %}" class="btn btn-outline-primary">Editar</a>
+            <a href="{% url 'project_edit_wizard' project.pk %}" class="btn btn-outline-primary">Editar proyecto</a>
             {% endif %}
             <a href="{% url 'linea_base_seguimiento' project.pk %}" class="btn btn-primary">Linea base y seguimiento</a>
             <a href="{% url 'project_cuts' project.pk %}" class="btn btn-outline-primary">Cortes del proyecto</a>
+            <a href="{% url 'evm_curves' project.pk %}" class="btn btn-outline-primary">Curvas S</a>
             <a href="{% url 'project_financial_summary' project.pk %}" class="btn btn-outline-secondary">Resumen financiero</a>
         </div>
     </div>
@@ -62,13 +63,23 @@
             <div class="metric-value">${{ project.budget|floatformat:2|default:"0.00" }}</div>
         </div>
         <div class="metric-card">
+            <div class="metric-label">Costo planificado</div>
+            <div class="metric-value">${{ project.total_planned_cost|floatformat:2 }}</div>
+        </div>
+        <div class="metric-card">
             <div class="metric-label">Costo real</div>
             <div class="metric-value">${{ total_cost|floatformat:2 }}</div>
         </div>
         <div class="metric-card">
-            <div class="metric-label">Variacion</div>
-            <div class="metric-value {% if budget_variance and budget_variance < 0 %}text-danger{% elif budget_variance and budget_variance > 0 %}text-success{% endif %}">
-                {% if budget_variance %}${{ budget_variance|floatformat:2 }}{% else %}N/A{% endif %}
+            <div class="metric-label">Desv. presupuesto</div>
+            <div class="metric-value {% if budget_variance is not None and budget_variance < 0 %}text-danger{% elif budget_variance is not None and budget_variance > 0 %}text-success{% endif %}">
+                {% if budget_variance is not None %}${{ budget_variance|floatformat:2 }}{% else %}N/A{% endif %}
+            </div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-label">Desv. ejecucion</div>
+            <div class="metric-value {% if project.planned_vs_actual_variance < 0 %}text-danger{% elif project.planned_vs_actual_variance > 0 %}text-success{% endif %}">
+                ${{ project.planned_vs_actual_variance|floatformat:2 }}
             </div>
         </div>
     </div>
@@ -79,11 +90,29 @@
         <section class="page-card h-100">
             <h2 class="section-title">Informacion general</h2>
             <dl class="row mb-0">
+                <dt class="col-sm-4">Estado</dt>
+                <dd class="col-sm-8"><span class="status-chip">{{ project.get_status_display }}</span></dd>
+                <dt class="col-sm-4">Creado por</dt>
+                <dd class="col-sm-8">{{ project.created_by.get_full_name|default:project.created_by.username }}</dd>
                 <dt class="col-sm-4">Inicio</dt>
                 <dd class="col-sm-8">{{ project.start_date|date:"d/m/Y" }}</dd>
                 <dt class="col-sm-4">Fin</dt>
                 <dd class="col-sm-8">{{ project.end_date|date:"d/m/Y" }}</dd>
-                <dt class="col-sm-4">Utilizacion presupuesto</dt>
+                <dt class="col-sm-4">Presupuesto</dt>
+                <dd class="col-sm-8">${{ project.budget|floatformat:2|default:"0.00" }}</dd>
+                <dt class="col-sm-4">Costo planificado</dt>
+                <dd class="col-sm-8">${{ project.total_planned_cost|floatformat:2 }}</dd>
+                <dt class="col-sm-4">Costo real</dt>
+                <dd class="col-sm-8">${{ total_cost|floatformat:2 }}</dd>
+                <dt class="col-sm-4">Desv. presupuesto</dt>
+                <dd class="col-sm-8 {% if budget_variance is not None and budget_variance < 0 %}text-danger{% elif budget_variance is not None and budget_variance > 0 %}text-success{% endif %}">
+                    {% if budget_variance is not None %}${{ budget_variance|floatformat:2 }}{% else %}N/A{% endif %}
+                </dd>
+                <dt class="col-sm-4">Desv. ejecucion</dt>
+                <dd class="col-sm-8 {% if project.planned_vs_actual_variance < 0 %}text-danger{% elif project.planned_vs_actual_variance > 0 %}text-success{% endif %}">
+                    ${{ project.planned_vs_actual_variance|floatformat:2 }}
+                </dd>
+                <dt class="col-sm-4">Uso presupuesto</dt>
                 <dd class="col-sm-8">{{ budget_utilization|floatformat:1 }}%</dd>
                 <dt class="col-sm-4">Estado CMI</dt>
                 <dd class="col-sm-8">
@@ -112,13 +141,13 @@
             {% if project.actaconstitucion %}
             <dl class="row mb-0">
                 <dt class="col-sm-4">Alcance</dt>
-                <dd class="col-sm-8">{{ project.actaconstitucion.alcance|truncatewords:20 }}</dd>
+                <dd class="col-sm-8">{{ project.actaconstitucion.alcance|linebreaks }}</dd>
                 <dt class="col-sm-4">Entregables</dt>
-                <dd class="col-sm-8">{{ project.actaconstitucion.entregables|truncatewords:20 }}</dd>
+                <dd class="col-sm-8">{{ project.actaconstitucion.entregables|linebreaks }}</dd>
                 <dt class="col-sm-4">Justificacion</dt>
-                <dd class="col-sm-8">{{ project.actaconstitucion.justificacion|truncatewords:20 }}</dd>
+                <dd class="col-sm-8">{{ project.actaconstitucion.justificacion|linebreaks }}</dd>
                 <dt class="col-sm-4">Objetivos</dt>
-                <dd class="col-sm-8">{{ project.actaconstitucion.objetivos|truncatewords:20 }}</dd>
+                <dd class="col-sm-8">{{ project.actaconstitucion.objetivos|linebreaks }}</dd>
             </dl>
             {% else %}
             <div class="empty-state py-3">Este proyecto todavia no tiene acta de constitucion.</div>
@@ -126,11 +155,147 @@
         </section>
     </div>
 
+    {% if alcance %}
+    <div class="col-12">
+        <section class="page-card">
+            <h2 class="section-title">Alcance detallado</h2>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Descripcion</dt>
+                <dd class="col-sm-9">{{ alcance.descripcion|linebreaks }}</dd>
+                <dt class="col-sm-3">Objetivos</dt>
+                <dd class="col-sm-9">{{ alcance.objetivos|linebreaks }}</dd>
+            </dl>
+        </section>
+    </div>
+    {% endif %}
+
+    {% if stakeholders %}
+    <div class="col-12">
+        <section class="page-card">
+            <div class="page-toolbar">
+                <h2 class="section-title mb-0">Interesados (Stakeholders)</h2>
+            </div>
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table data-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Interes</th>
+                                <th>Poder</th>
+                                <th>Contacto</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in stakeholders %}
+                            <tr>
+                                <td><strong>{{ s.name }}</strong></td>
+                                <td>{{ s.email }}</td>
+                                <td>{{ s.get_role_display }}</td>
+                                <td><span class="badge bg-info">{{ s.get_interest_level_display }}</span></td>
+                                <td><span class="badge bg-warning text-dark">{{ s.get_power_level_display }}</span></td>
+                                <td class="small">{{ s.contact_info|default:"—" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+    {% endif %}
+
+    {% if risks %}
+    <div class="col-12">
+        <section class="page-card">
+            <div class="page-toolbar">
+                <h2 class="section-title mb-0">Riesgos</h2>
+            </div>
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table data-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Descripcion</th>
+                                <th>Probabilidad</th>
+                                <th>Impacto</th>
+                                <th>Nivel</th>
+                                <th>Estado</th>
+                                <th>Plan de mitigacion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for risk in risks %}
+                            <tr>
+                                <td>{{ risk.description }}</td>
+                                <td>{{ risk.get_probability_display }}</td>
+                                <td>{{ risk.get_impact_display }}</td>
+                                <td>
+                                    {% if risk.probability == 'high' or risk.impact == 'high' %}
+                                        <span class="badge bg-danger">Alto</span>
+                                    {% elif risk.probability == 'medium' or risk.impact == 'medium' %}
+                                        <span class="badge bg-warning text-dark">Medio</span>
+                                    {% else %}
+                                        <span class="badge bg-success">Bajo</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="status-chip">{{ risk.get_status_display }}</span></td>
+                                <td class="small">{{ risk.mitigation_plan|default:"—"|linebreaks }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" class="empty-state">No hay riesgos registrados.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+    {% endif %}
+
+    {% if communications %}
+    <div class="col-12">
+        <section class="page-card">
+            <div class="page-toolbar">
+                <h2 class="section-title mb-0">Plan de comunicacion</h2>
+            </div>
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table data-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Interesado</th>
+                                <th>Mensaje</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comm in communications %}
+                            <tr>
+                                <td>{{ comm.get_tipo_display }}</td>
+                                <td>{{ comm.interesado.name|default:"—" }}</td>
+                                <td>{{ comm.mensaje|linebreaks }}</td>
+                                <td class="small">{{ comm.fecha|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="empty-state">No hay comunicaciones registradas.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </div>
+    {% endif %}
+
     <div class="col-12">
         <section class="page-card mb-4">
             <div class="page-toolbar">
                 <h2 class="section-title mb-0">Actividades</h2>
-                <a href="{% url 'activity_create' %}" class="btn btn-sm btn-primary">Nueva actividad</a>
+                <a href="{% url 'activity_create' project.pk %}" class="btn btn-sm btn-primary">Nueva actividad</a>
             </div>
             <div class="table-card">
                 <div class="table-responsive">
@@ -145,6 +310,7 @@
                                 <th>Costo Real</th>
                                 <th>Var. Dias</th>
                                 <th>Var. Costo</th>
+                                <th>Recursos</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -154,6 +320,9 @@
                                     <strong>{{ activity.name }}</strong>
                                     {% if activity.description %}
                                     <div class="small text-muted">{{ activity.description|truncatechars:40 }}</div>
+                                    {% endif %}
+                                    {% if activity.predecessor %}
+                                    <div class="small text-muted">Predecesora: {{ activity.predecessor.name }}</div>
                                     {% endif %}
                                 </td>
                                 <td><span class="status-chip">{{ activity.get_status_display }}</span></td>
@@ -166,10 +335,10 @@
                                         <span class="text-muted">—</span>
                                     {% endif %}
                                 </td>
-                                <td>${{ activity.cost|default:0|floatformat:2 }}</td>
+                                <td>${{ activity.total_planned_cost|default:0|floatformat:2 }}</td>
                                 <td>
-                                    {% if activity.actual_cost is not None %}
-                                        ${{ activity.actual_cost|floatformat:2 }}
+                                    {% if activity.total_actual_cost is not None %}
+                                        ${{ activity.total_actual_cost|floatformat:2 }}
                                     {% else %}
                                         <span class="text-muted">—</span>
                                     {% endif %}
@@ -200,10 +369,21 @@
                                         <span class="text-muted">—</span>
                                     {% endif %}
                                 </td>
+                                <td class="small">
+                                    {% with act_resources=activity.resource_set.all %}
+                                    {% if act_resources %}
+                                        {% for r in act_resources %}
+                                        <span class="badge bg-light text-dark me-1">{{ r.get_type_display }}: {{ r.name }} ({{ r.quantity }} x ${{ r.cost_per_unit }})</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="8" class="empty-state">No hay actividades registradas.</td>
+                                <td colspan="9" class="empty-state">No hay actividades registradas.</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -215,7 +395,7 @@
         <section class="page-card">
             <div class="page-toolbar">
                 <h2 class="section-title mb-0">Hitos</h2>
-                <a href="{% url 'milestone_create' %}" class="btn btn-sm btn-primary">Nuevo hito</a>
+                <a href="{% url 'milestone_create' project.pk %}" class="btn btn-sm btn-primary">Nuevo hito</a>
             </div>
             <div class="table-card">
                 <div class="table-responsive">
@@ -252,7 +432,6 @@
 <div class="page-actions justify-content-end mt-4">
     <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Volver al tablero</a>
     {% if can_edit %}
-    <a href="{% url 'project_edit_wizard' project.pk %}" class="btn btn-outline-primary">Editar con asistente</a>
     <a href="{% url 'project_delete' project.pk %}" class="btn btn-outline-danger">Eliminar proyecto</a>
     {% endif %}
 </div>
