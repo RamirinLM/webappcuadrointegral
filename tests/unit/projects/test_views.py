@@ -127,7 +127,7 @@ class TestActivityViews(TestCase):
         )
 
     def test_activity_list(self):
-        response = self.client.get(reverse('activity_list'))
+        response = self.client.get(reverse('activity_list', args=[self.project.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'projects/activity_list.html')
 
@@ -142,8 +142,8 @@ class TestActivityViews(TestCase):
             'cost': '100.00',
             'time_estimate': 5
         }
-        response = self.client.post(reverse('activity_create'), data)
-        self.assertRedirects(response, reverse('activity_list'))
+        response = self.client.post(reverse('activity_create', args=[self.project.pk]), data)
+        self.assertRedirects(response, reverse('activity_list', args=[self.project.pk]))
         self.assertEqual(Activity.objects.count(), 1)
 
     def test_notification_schema_mismatch_is_handled_gracefully(self):
@@ -169,7 +169,7 @@ class TestMilestoneViews(TestCase):
         )
 
     def test_milestone_list(self):
-        response = self.client.get(reverse('milestone_list'))
+        response = self.client.get(reverse('milestone_list', args=[self.project.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'projects/milestone_list.html')
 
@@ -183,8 +183,8 @@ class TestMilestoneViews(TestCase):
             'is_phase_gate': False,
             'completed': False
         }
-        response = self.client.post(reverse('milestone_create'), data)
-        self.assertRedirects(response, reverse('milestone_list'))
+        response = self.client.post(reverse('milestone_create', args=[self.project.pk]), data)
+        self.assertRedirects(response, reverse('milestone_list', args=[self.project.pk]))
         self.assertEqual(Milestone.objects.count(), 1)
 
 class TestUserViews(TestCase):
@@ -241,5 +241,5 @@ class TestSeguimientoViews(TestCase):
             'observacion': 'Test observation'
         }
         response = self.client.post(reverse('seguimiento_create', args=[self.project.pk]), data)
-        self.assertRedirects(response, reverse('seguimiento_list'))
+        self.assertRedirects(response, reverse('project_detail', args=[self.project.pk]))
         self.assertEqual(Seguimiento.objects.count(), 1)

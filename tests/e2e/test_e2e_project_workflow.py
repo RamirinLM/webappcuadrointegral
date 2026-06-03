@@ -19,7 +19,7 @@ def test_project_lifecycle_from_creation_to_reports(page_with_server, login, uni
     page.get_by_role("button", name="Guardar").click()
 
     expect(page.locator("body")).to_contain_text(project_name)
-    expect(page.locator("body")).to_contain_text("Acta de Constitución")
+    expect(page.locator("body")).to_contain_text("Acta de constitucion")
 
     page.goto("/projects/")
     expect(page.locator("body")).to_contain_text(project_name)

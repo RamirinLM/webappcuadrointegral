@@ -75,7 +75,7 @@ class ProjectManagementTestCase(TestCase):
             end_date=date(2023, 12, 31),
             created_by=self.user
         )
-        response = self.client.post(reverse('activity_create'), {
+        response = self.client.post(reverse('activity_create', args=[project.pk]), {
             'project': project.pk,
             'name': 'Test Activity',
             'description': 'Activity desc',
@@ -96,7 +96,7 @@ class ProjectManagementTestCase(TestCase):
             end_date=date(2023, 12, 31),
             created_by=self.user
         )
-        response = self.client.post(reverse('milestone_create'), {
+        response = self.client.post(reverse('milestone_create', args=[project.pk]), {
             'project': project.pk,
             'name': 'Test Milestone',
             'description': 'Milestone desc',

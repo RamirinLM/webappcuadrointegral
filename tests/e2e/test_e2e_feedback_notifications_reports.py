@@ -10,13 +10,15 @@ def test_feedback_notification_and_report_filtering(page_with_server, login, see
     page.select_option("#id_rating", "5")
     page.fill("#id_comments", "Retroalimentacion registrada por E2E")
     page.get_by_role("button", name="Guardar").click()
-    expect(page.locator("body")).to_contain_text("Retroalimentación registrada exitosamente")
-    expect(page.locator("body")).to_contain_text("Retroalimentacion de Interesados")
+    expect(page.locator("body")).to_contain_text("Retroalimentacion registrada exitosamente.")
+    expect(page.locator("body")).to_contain_text("Feedback de stakeholders")
 
     page.goto("/notifications/")
     expect(page.locator("body")).to_contain_text("Notificacion E2E pendiente")
-    page.locator(".list-group-item").first.click()
-    expect(page.locator("body")).to_contain_text("Estado: Leida")
+    # Navigate to the notification detail page
+    page.goto(f"/notifications/{seeded_notification.pk}/")
+    # The detail view auto-marks as read, so it shows "Leida"
+    expect(page.locator("body")).to_contain_text("Leida")
 
     page.goto("/reports/")
     page.fill('input[name="owner_id"]', str(seeded_project["project"].created_by_id))

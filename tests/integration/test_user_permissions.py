@@ -1,6 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth.models import User
 from django.test import Client
+from django.urls import reverse
 from projects.models import Project, Activity, UserProfile
 from resources.models import Resource
 from risks.models import Risk
@@ -108,9 +109,9 @@ class UserPermissionsTest(TestCase):
         self.assertNotContains(response, 'Project 1')
 
     def test_activity_access_permissions(self):
-        # Login as user1
+        # Login as user1 — can see activities in project1
         self.client.login(username='user1', password='pass')
-        response = self.client.get('/activities/')
+        response = self.client.get(reverse('activity_list', args=[self.project1.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Activity 1')
         self.assertNotContains(response, 'Activity 2')
