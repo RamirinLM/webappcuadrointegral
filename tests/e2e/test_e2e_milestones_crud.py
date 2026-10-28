@@ -2,6 +2,8 @@
 
 Covers create and edit operations for milestones outside the wizard.
 """
+from datetime import date, timedelta
+
 from playwright.sync_api import expect
 
 
@@ -14,11 +16,12 @@ def test_milestone_create(page_with_server, login, seeded_project, unique_suffix
     page.goto(f"/projects/{project.pk}/milestones/create/")
     page.wait_for_selector("#id_name")
 
-    # Fill the form
+    # Fill the form (dates relative to project range to avoid validation errors)
     page.fill("#id_name", milestone_name)
     page.fill("#id_description", "Hito creado desde test E2E")
-    page.fill("#id_due_date", "2026-06-15")
+    page.fill("#id_due_date", (project.start_date + timedelta(days=5)).isoformat())
     page.select_option("#id_phase", "planning")
+    page.select_option("#id_project", str(project.pk))
     page.check("#id_is_phase_gate")
 
     # Submit
@@ -61,7 +64,8 @@ def test_milestone_edit(page_with_server, login, seeded_project, seeded_roles, u
     # Change fields (must fill all required fields explicitly)
     new_name = f"Hito Editado E2E {unique_suffix}"
     page.fill("#id_name", new_name)
-    page.fill("#id_due_date", "2026-06-20")
+    # Use a date within the project's range (start=today-5, end=today+45)
+    page.fill("#id_due_date", (date.today() + timedelta(days=20)).isoformat())
     page.select_option("#id_phase", "closure")
     page.check("#id_completed")
 
